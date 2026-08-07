@@ -91,3 +91,82 @@ export function buildGoogleWalletSaveUrl({
 
   return `https://pay.google.com/gp/v/save/${token}`;
 }
+
+async function getGoogleWalletAccessToken(): Promise<string> {
+  const serviceAccountEmail = process.env.GOOGLE_WALLET_SERVICE_ACCOUNT_EMAIL!;
+  const privateKey = process.env.GOOGLE_WALLET_PRIVATE_KEY!.replace(/\\n/g, "\n");
+  const now = Math.floor(Date.now() / 1000);
+
+  const assertion = jwt.sign(
+    {
+      iss: serviceAccountEmail,
+      scope: "https://www.googleapis.com/auth/wallet_object.issuer",
+      aud: "https://oauth2.googleapis.com/token",
+      iat: now,
+      exp: now + 3600,
+    },
+    privateKey,
+    { algorithm: "RS256" }
+  );
+
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Google OAuth token error: ${res.status} ${await res.text()}`);
+  }
+
+  const { access_token: accessToken } = (await res.json()) as { access_token: string };
+  return accessToken;
+}
+
+// Updates an already-saved Google Wallet pass so it reflects a new stamp
+// count without the client having to re-save it. Best-effort: if the client
+// never added the pass to their wallet, the object doesn't exist yet and
+// this silently no-ops (a 404 here is expected, not an error).
+export async function updateGoogleWalletStamps({
+  clientId,
+  stamps,
+  stampsRequired,
+}: {
+  clientId: string;
+  stamps: number;
+  stampsRequired: number;
+}) {
+  if (!isGoogleWalletConfigured()) return;
+
+  const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID!;
+  const objectId = `${issuerId}.client_${clientId}`;
+
+  try {
+    const accessToken = await getGoogleWalletAccessToken();
+    const res = await fetch(
+      `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyObject/${objectId}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          loyaltyPoints: {
+            label: "Tampons",
+            balance: { string: `${stamps} / ${stampsRequired}` },
+          },
+        }),
+      }
+    );
+
+    if (!res.ok && res.status !== 404) {
+      console.error("Google Wallet stamp update failed:", res.status, await res.text());
+    }
+  } catch (err) {
+    console.error("Google Wallet stamp update error:", err);
+  }
+}
