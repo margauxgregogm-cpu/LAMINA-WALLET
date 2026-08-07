@@ -33,6 +33,7 @@ const THEMES: Record<
 export function LoyaltyCard({
   restaurantName,
   logoInitials,
+  logoUrl,
   stampsEarned,
   stampsRequired,
   rewardText,
@@ -41,6 +42,7 @@ export function LoyaltyCard({
 }: {
   restaurantName: string;
   logoInitials: string;
+  logoUrl?: string | null;
   stampsEarned: number;
   stampsRequired: number;
   rewardText: string;
@@ -57,13 +59,20 @@ export function LoyaltyCard({
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
           <div
-            className={`flex h-11 w-11 items-center justify-center rounded-xl font-semibold ${
-              colorTheme === "white"
-                ? "bg-zinc-900 text-white"
-                : "bg-white/10"
+            className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl font-semibold ${
+              logoUrl
+                ? ""
+                : colorTheme === "white"
+                  ? "bg-zinc-900 text-white"
+                  : "bg-white/10"
             }`}
           >
-            {logoInitials}
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              logoInitials
+            )}
           </div>
           <div>
             <div className="font-semibold uppercase tracking-wide">

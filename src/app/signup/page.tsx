@@ -14,7 +14,7 @@ export default async function SignupPage({
 
   const { data: restaurant } = await supabase
     .from("restaurants")
-    .select("id, slug, name, color_theme, stamps_required, reward_text, welcome_offer_text")
+    .select("id, slug, name, color_theme, stamps_required, reward_text, welcome_offer_text, logo_url")
     .eq("slug", slug)
     .single();
 
@@ -25,6 +25,7 @@ export default async function SignupPage({
       <LoyaltyCard
         restaurantName={restaurant.name}
         logoInitials={restaurant.name.slice(0, 2).toUpperCase()}
+        logoUrl={restaurant.logo_url}
         stampsEarned={0}
         stampsRequired={restaurant.stamps_required}
         rewardText={restaurant.reward_text}

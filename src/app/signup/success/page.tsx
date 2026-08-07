@@ -59,6 +59,7 @@ export default async function SignupSuccessPage({
       <LoyaltyCard
         restaurantName={restaurant.name}
         logoInitials={restaurant.name.slice(0, 2).toUpperCase()}
+        logoUrl={restaurant.logo_url}
         stampsEarned={client.stamps}
         stampsRequired={restaurant.stamps_required}
         rewardText={restaurant.reward_text}

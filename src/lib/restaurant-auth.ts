@@ -7,6 +7,7 @@ export type AuthenticatedRestaurant = {
   name: string;
   stamps_required: number;
   reward_text: string;
+  logo_url: string | null;
 };
 
 export async function getAuthenticatedRestaurant(): Promise<AuthenticatedRestaurant | null> {
@@ -19,7 +20,7 @@ export async function getAuthenticatedRestaurant(): Promise<AuthenticatedRestaur
 
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
-    .select("id, name, stamps_required, reward_text")
+    .select("id, name, stamps_required, reward_text, logo_url")
     .eq("user_id", user.id)
     .single();
 

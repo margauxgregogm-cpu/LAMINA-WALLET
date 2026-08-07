@@ -21,7 +21,7 @@ export default async function RestaurantDashboardPage() {
 
   return (
     <div className="flex flex-1 flex-col items-center gap-8 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
-      <RestaurantNav restaurantName={restaurant.name} active="dashboard" />
+      <RestaurantNav restaurantName={restaurant.name} logoUrl={restaurant.logo_url} active="dashboard" />
 
       <SearchClients />
 
