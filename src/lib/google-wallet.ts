@@ -16,6 +16,7 @@ export function buildGoogleWalletSaveUrl({
   restaurantId,
   restaurantName,
   backgroundColor,
+  backgroundImageUrl,
   stampsRequired,
   rewardText,
   clientId,
@@ -26,6 +27,7 @@ export function buildGoogleWalletSaveUrl({
   restaurantId: string;
   restaurantName: string;
   backgroundColor: string;
+  backgroundImageUrl?: string | null;
   stampsRequired: number;
   rewardText: string;
   clientId: string;
@@ -52,6 +54,16 @@ export function buildGoogleWalletSaveUrl({
         defaultValue: { language: "fr", value: `Logo ${restaurantName}` },
       },
     },
+    ...(backgroundImageUrl
+      ? {
+          heroImage: {
+            sourceUri: { uri: backgroundImageUrl },
+            contentDescription: {
+              defaultValue: { language: "fr", value: `Fond ${restaurantName}` },
+            },
+          },
+        }
+      : {}),
   };
 
   const loyaltyObject = {

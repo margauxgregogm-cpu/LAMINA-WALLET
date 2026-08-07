@@ -38,6 +38,7 @@ export default async function SignupSuccessPage({
         restaurantId: client.restaurant_id,
         restaurantName: restaurant.name,
         backgroundColor: restaurant.background_color,
+        backgroundImageUrl: restaurant.background_image_url,
         stampsRequired: restaurant.stamps_required,
         rewardText: restaurant.reward_text,
         clientId: client.id,
