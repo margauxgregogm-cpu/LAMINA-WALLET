@@ -14,17 +14,31 @@ export type AuthenticatedRestaurant = {
 };
 
 export async function getAuthenticatedRestaurant(): Promise<AuthenticatedRestaurant | null> {
-  const supabase = await createClient();
+  const supabase = await createClient("restaurant");
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  let authedUser = user;
+  if (!authedUser && error) {
+    // getUser() calls out to Supabase's Auth server to re-verify the token —
+    // a transient network hiccup there isn't the same as being logged out.
+    // Fall back to the locally cached session (read straight from the
+    // cookie, no network call) so a flaky request doesn't bounce the
+    // restaurant to the login screen.
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    authedUser = session?.user ?? null;
+  }
+
+  if (!authedUser) return null;
 
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
     .select("id, slug, name, stamps_required, reward_text, logo_url, background_color, background_image_url")
-    .eq("user_id", user.id)
+    .eq("user_id", authedUser.id)
     .single();
 
   return restaurant ?? null;

@@ -4,6 +4,20 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+// The client-side `pattern` attribute on the slug field is trivially
+// bypassed (JS-driven form fills, browsers that don't enforce it), so the
+// slug must be normalized server-side too — otherwise spaces/accents/etc.
+// end up in the public URL and QR code.
+function slugify(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 async function uploadImageIfProvided(
   formData: FormData,
   fieldName: string,
@@ -29,9 +43,7 @@ export async function createRestaurant(formData: FormData) {
   await requireAdmin();
 
   const name = String(formData.get("name") ?? "").trim();
-  const slug = String(formData.get("slug") ?? "")
-    .trim()
-    .toLowerCase();
+  const slug = slugify(String(formData.get("slug") ?? ""));
   const backgroundColor = String(formData.get("backgroundColor") ?? "#27272a");
   const stampsRequired = Number(formData.get("stampsRequired") ?? 8);
   const rewardText = String(formData.get("rewardText") ?? "").trim();
@@ -92,15 +104,19 @@ export async function updateRestaurant(formData: FormData) {
 
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
-  const slug = String(formData.get("slug") ?? "")
-    .trim()
-    .toLowerCase();
+  const slug = slugify(String(formData.get("slug") ?? ""));
   const backgroundColor = String(formData.get("backgroundColor") ?? "#27272a");
   const removeBackgroundImage = formData.get("removeBackgroundImage") === "on";
   const stampsRequired = Number(formData.get("stampsRequired") ?? 8);
   const rewardText = String(formData.get("rewardText") ?? "").trim();
   const welcomeOfferText = String(formData.get("welcomeOfferText") ?? "").trim();
   const address = String(formData.get("address") ?? "").trim();
+
+  if (!name || !slug || !rewardText) {
+    return redirect(
+      `/admin/restaurants/${id}?error=${encodeURIComponent("Champs obligatoires manquants.")}`
+    );
+  }
 
   let logoUrl: string | null;
   let backgroundImageUrl: string | null;

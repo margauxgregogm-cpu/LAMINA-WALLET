@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { QrScanner } from "@/components/QrScanner";
 import { LoyaltyCard } from "@/components/LoyaltyCard";
@@ -51,16 +51,32 @@ export function ScanClient({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // The camera keeps decoding while the client's QR code is still in frame,
+  // so dismissing the result overlay (which resumes the scanner) can
+  // immediately re-trigger a scan of the exact same code, popping the
+  // overlay right back up. Ignore repeat scans of the same code for a short
+  // window so it takes an actual new code to trigger another visit.
+  const lastScanRef = useRef<{ id: string; at: number } | null>(null);
+  const SCAN_COOLDOWN_MS = 10_000;
+
   function showVisitResult(result: VisitResult) {
     setOverlayResult(result);
     setLastClient({ id: result.clientId, name: result.clientFullName });
   }
 
   function runScan(clientId: string) {
+    const trimmed = clientId.trim();
+    const now = Date.now();
+    const last = lastScanRef.current;
+    if (last && last.id === trimmed && now - last.at < SCAN_COOLDOWN_MS) {
+      return;
+    }
+    lastScanRef.current = { id: trimmed, at: now };
+
     setError(null);
     setLookup(null);
     startTransition(async () => {
-      const result = await recordVisit(clientId.trim());
+      const result = await recordVisit(trimmed);
       if ("error" in result) {
         setError(result.error ?? "Erreur inconnue");
         return;

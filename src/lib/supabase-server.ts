@@ -2,13 +2,18 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export async function createClient() {
+// Admin and restaurant are different Supabase Auth users signed in from the
+// same browser/origin. A single shared session cookie can only hold one of
+// them at a time, so signing into one silently signs the other out. Giving
+// each section its own cookie name keeps the two sessions independent.
+export async function createClient(section: "admin" | "restaurant") {
   const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: { name: `sb-${section}-auth` },
       cookies: {
         getAll() {
           return cookieStore.getAll();

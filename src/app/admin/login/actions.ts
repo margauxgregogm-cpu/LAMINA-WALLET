@@ -8,7 +8,7 @@ export async function loginAdmin(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
 
-  const supabase = await createClient();
+  const supabase = await createClient("admin");
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
@@ -24,7 +24,7 @@ export async function loginAdmin(formData: FormData) {
 }
 
 export async function logoutAdmin() {
-  const supabase = await createClient();
+  const supabase = await createClient("admin");
   await supabase.auth.signOut();
   redirect("/admin/login");
 }
