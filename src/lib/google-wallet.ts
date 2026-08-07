@@ -76,6 +76,13 @@ export function buildGoogleWalletSaveUrl({
       label: "Tampons",
       balance: { string: `${stamps} / ${stampsRequired}` },
     },
+    // Shown directly on the card face next to the stamp count — the
+    // textModulesData entry below only shows in the expanded details panel,
+    // which clients don't see without tapping into the pass.
+    secondaryLoyaltyPoints: {
+      label: "Récompense",
+      balance: { string: rewardText },
+    },
     textModulesData: [{ id: "reward", header: "Récompense", body: rewardText }],
     barcode: { type: "QR_CODE", value: clientId, alternateText: "" },
   };
@@ -139,10 +146,12 @@ export async function updateGoogleWalletStamps({
   clientId,
   stamps,
   stampsRequired,
+  rewardText,
 }: {
   clientId: string;
   stamps: number;
   stampsRequired: number;
+  rewardText: string;
 }) {
   if (!isGoogleWalletConfigured()) return;
 
@@ -163,6 +172,13 @@ export async function updateGoogleWalletStamps({
           loyaltyPoints: {
             label: "Tampons",
             balance: { string: `${stamps} / ${stampsRequired}` },
+          },
+          // Also re-sent here (not just at creation) so passes saved before
+          // this field existed pick it up on their next visit, without a
+          // separate backfill.
+          secondaryLoyaltyPoints: {
+            label: "Récompense",
+            balance: { string: rewardText },
           },
         }),
       }

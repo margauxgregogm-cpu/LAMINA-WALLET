@@ -97,6 +97,7 @@ export async function recordVisit(clientId: string) {
       clientId,
       stamps: stampsAfter,
       stampsRequired: restaurant.stamps_required,
+      rewardText: restaurant.reward_text,
     })
   );
 
