@@ -84,7 +84,10 @@ export function buildGoogleWalletSaveUrl({
       balance: { string: rewardText },
     },
     textModulesData: [{ id: "reward", header: "Récompense", body: rewardText }],
-    barcode: { type: "QR_CODE", value: clientId, alternateText: "" },
+    // An empty alternateText falls back to showing the raw barcode value
+    // (the client's UUID) printed under the QR code — a single space
+    // suppresses that text without affecting the QR code itself.
+    barcode: { type: "QR_CODE", value: clientId, alternateText: " " },
   };
 
   const token = jwt.sign(
