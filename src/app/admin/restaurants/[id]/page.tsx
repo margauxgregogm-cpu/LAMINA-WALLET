@@ -5,19 +5,20 @@ import { isAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { AdminNav } from "@/components/AdminNav";
 import { FormField, formInputClass } from "@/components/FormField";
-import { updateRestaurant } from "../actions";
+import { updateRestaurant, resetRestaurantPassword } from "../actions";
+import { DeleteRestaurantButton } from "../DeleteRestaurantButton";
 
 export default async function EditRestaurantPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; saved?: string }>;
+  searchParams: Promise<{ error?: string; saved?: string; passwordReset?: string }>;
 }) {
   if (!(await isAdmin())) redirect("/admin/login");
 
   const { id } = await params;
-  const { error, saved } = await searchParams;
+  const { error, saved, passwordReset } = await searchParams;
 
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
@@ -43,6 +44,11 @@ export default async function EditRestaurantPage({
         {saved && (
           <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
             Modifications enregistrées.
+          </p>
+        )}
+        {passwordReset && (
+          <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+            Mot de passe mis à jour.
           </p>
         )}
         {error && (
@@ -138,6 +144,34 @@ export default async function EditRestaurantPage({
             Enregistrer
           </button>
         </form>
+
+        <hr className="my-8 border-zinc-200 dark:border-zinc-800" />
+
+        <h2 className="mb-3 text-sm font-semibold">Mot de passe du restaurant</h2>
+        <form action={resetRestaurantPassword} className="flex gap-2">
+          <input type="hidden" name="id" value={restaurant.id} />
+          <input
+            name="newPassword"
+            type="text"
+            placeholder="Nouveau mot de passe (6 caractères min.)"
+            required
+            minLength={6}
+            className={formInputClass}
+          />
+          <button
+            type="submit"
+            className="shrink-0 rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          >
+            Réinitialiser
+          </button>
+        </form>
+
+        <hr className="my-8 border-zinc-200 dark:border-zinc-800" />
+
+        <h2 className="mb-3 text-sm font-semibold text-red-600 dark:text-red-400">
+          Zone de danger
+        </h2>
+        <DeleteRestaurantButton id={restaurant.id} name={restaurant.name} />
       </div>
     </div>
   );

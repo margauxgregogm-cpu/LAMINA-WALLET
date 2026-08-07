@@ -116,3 +116,54 @@ export async function updateRestaurant(formData: FormData) {
 
   redirect(`/admin/restaurants/${id}?saved=1`);
 }
+
+export async function resetRestaurantPassword(formData: FormData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") ?? "");
+  const newPassword = String(formData.get("newPassword") ?? "");
+
+  const { data: restaurant } = await supabaseAdmin
+    .from("restaurants")
+    .select("user_id")
+    .eq("id", id)
+    .single();
+
+  if (!restaurant?.user_id) {
+    return redirect(
+      `/admin/restaurants/${id}?error=${encodeURIComponent("Aucun compte de connexion associé à ce restaurant.")}`
+    );
+  }
+
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(restaurant.user_id, {
+    password: newPassword,
+  });
+
+  if (error) {
+    return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/admin/restaurants/${id}?passwordReset=1`);
+}
+
+export async function deleteRestaurant(id: string) {
+  await requireAdmin();
+
+  const { data: restaurant } = await supabaseAdmin
+    .from("restaurants")
+    .select("user_id")
+    .eq("id", id)
+    .single();
+
+  const { error } = await supabaseAdmin.from("restaurants").delete().eq("id", id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (restaurant?.user_id) {
+    await supabaseAdmin.auth.admin.deleteUser(restaurant.user_id);
+  }
+
+  redirect("/admin");
+}
