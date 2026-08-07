@@ -16,7 +16,8 @@ export default async function ScanPage() {
       <ScanClient
         restaurantName={restaurant.name}
         logoUrl={restaurant.logo_url}
-        colorTheme={restaurant.color_theme}
+        backgroundColor={restaurant.background_color}
+        backgroundImageUrl={restaurant.background_image_url}
       />
     </div>
   );

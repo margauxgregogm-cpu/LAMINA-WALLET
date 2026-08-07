@@ -5,6 +5,7 @@ import { isAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { AdminNav } from "@/components/AdminNav";
 import { FormField, formInputClass } from "@/components/FormField";
+import { ColorSwatchPicker } from "@/components/ColorSwatchPicker";
 import { updateRestaurant, resetRestaurantPassword } from "../actions";
 import { DeleteRestaurantButton } from "../DeleteRestaurantButton";
 
@@ -85,13 +86,11 @@ export default async function EditRestaurantPage({
             />
           </FormField>
 
-          <FormField label="Thème de couleur">
-            <select name="colorTheme" defaultValue={restaurant.color_theme} className={formInputClass}>
-              <option value="anthracite">Anthracite (noir)</option>
-              <option value="white">Blanc</option>
-              <option value="gray">Gris</option>
-              <option value="navy">Bleu marine</option>
-            </select>
+          <FormField
+            label="Couleur du fond de la carte"
+            hint="utilisée si aucune image de fond n'est active"
+          >
+            <ColorSwatchPicker name="backgroundColor" defaultValue={restaurant.background_color} />
           </FormField>
 
           <FormField label="Nombre de passages pour la récompense">
@@ -135,6 +134,36 @@ export default async function EditRestaurantPage({
           <FormField label="Remplacer le logo (optionnel)">
             <input
               name="logo"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className={formInputClass}
+            />
+          </FormField>
+
+          {restaurant.background_image_url && (
+            <div className="flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={restaurant.background_image_url}
+                alt="Image de fond actuelle"
+                className="h-12 w-20 rounded-lg border border-zinc-200 object-cover dark:border-zinc-800"
+              />
+              <label className="flex items-center gap-2 text-sm text-zinc-500">
+                <input type="checkbox" name="removeBackgroundImage" className="h-4 w-4" />
+                Supprimer l&apos;image de fond (revenir à la couleur)
+              </label>
+            </div>
+          )}
+          <FormField
+            label={
+              restaurant.background_image_url
+                ? "Remplacer l'image de fond (optionnel)"
+                : "Image de fond de la carte (optionnel)"
+            }
+            hint="si ajoutée, remplace la couleur choisie ci-dessus comme fond de la carte"
+          >
+            <input
+              name="backgroundImage"
               type="file"
               accept="image/png,image/jpeg,image/webp"
               className={formInputClass}

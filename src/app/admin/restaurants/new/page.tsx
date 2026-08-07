@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin-auth";
 import { AdminNav } from "@/components/AdminNav";
 import { FormField, formInputClass } from "@/components/FormField";
+import { ColorSwatchPicker } from "@/components/ColorSwatchPicker";
 import { createRestaurant } from "../actions";
 
 export default async function NewRestaurantPage({
@@ -38,13 +39,11 @@ export default async function NewRestaurantPage({
             <input name="slug" required pattern="[a-z0-9-]+" className={formInputClass} />
           </FormField>
 
-          <FormField label="Thème de couleur">
-            <select name="colorTheme" defaultValue="anthracite" className={formInputClass}>
-              <option value="anthracite">Anthracite (noir)</option>
-              <option value="white">Blanc</option>
-              <option value="gray">Gris</option>
-              <option value="navy">Bleu marine</option>
-            </select>
+          <FormField
+            label="Couleur du fond de la carte"
+            hint="utilisée si aucune image de fond n'est ajoutée ci-dessous"
+          >
+            <ColorSwatchPicker name="backgroundColor" defaultValue="#27272a" />
           </FormField>
 
           <FormField label="Nombre de passages pour la récompense">
@@ -73,6 +72,18 @@ export default async function NewRestaurantPage({
           <FormField label="Logo (optionnel)">
             <input
               name="logo"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className={formInputClass}
+            />
+          </FormField>
+
+          <FormField
+            label="Image de fond de la carte (optionnel)"
+            hint="si ajoutée, remplace la couleur choisie ci-dessus comme fond de la carte"
+          >
+            <input
+              name="backgroundImage"
               type="file"
               accept="image/png,image/jpeg,image/webp"
               className={formInputClass}

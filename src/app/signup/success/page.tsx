@@ -22,7 +22,7 @@ export default async function SignupSuccessPage({
 
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
-    .select("name, color_theme, stamps_required, reward_text, logo_url")
+    .select("name, background_color, background_image_url, stamps_required, reward_text, logo_url")
     .eq("id", client.restaurant_id)
     .single();
 
@@ -37,7 +37,7 @@ export default async function SignupSuccessPage({
     ? buildGoogleWalletSaveUrl({
         restaurantId: client.restaurant_id,
         restaurantName: restaurant.name,
-        colorTheme: restaurant.color_theme,
+        backgroundColor: restaurant.background_color,
         stampsRequired: restaurant.stamps_required,
         rewardText: restaurant.reward_text,
         clientId: client.id,
@@ -64,7 +64,8 @@ export default async function SignupSuccessPage({
         stampsRequired={restaurant.stamps_required}
         rewardText={restaurant.reward_text}
         memberName={client.first_name}
-        colorTheme={restaurant.color_theme}
+        backgroundColor={restaurant.background_color}
+        backgroundImageUrl={restaurant.background_image_url}
       />
 
       <div className="flex flex-col items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">

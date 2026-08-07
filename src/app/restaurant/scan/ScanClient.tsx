@@ -36,11 +36,13 @@ type VisitResult = {
 export function ScanClient({
   restaurantName,
   logoUrl,
-  colorTheme,
+  backgroundColor,
+  backgroundImageUrl,
 }: {
   restaurantName: string;
   logoUrl: string | null;
-  colorTheme: "anthracite" | "white" | "gray" | "navy";
+  backgroundColor: string;
+  backgroundImageUrl: string | null;
 }) {
   const [manualId, setManualId] = useState("");
   const [lookup, setLookup] = useState<Lookup | null>(null);
@@ -204,7 +206,8 @@ export function ScanClient({
               stampsRequired={overlayResult.stampsRequired}
               rewardText={overlayResult.rewardText}
               memberName={overlayResult.clientFullName}
-              colorTheme={colorTheme}
+              backgroundColor={backgroundColor}
+              backgroundImageUrl={backgroundImageUrl}
             />
 
             <p className="text-sm text-white/80">Cliquez n&apos;importe où pour continuer</p>

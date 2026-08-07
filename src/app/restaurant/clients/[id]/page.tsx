@@ -54,6 +54,8 @@ export default async function ClientDetailPage({
         stampsRequired={restaurant.stamps_required}
         rewardText={restaurant.reward_text}
         memberName={fullName}
+        backgroundColor={restaurant.background_color}
+        backgroundImageUrl={restaurant.background_image_url}
       />
 
       <div className="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">

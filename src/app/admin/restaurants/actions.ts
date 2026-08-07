@@ -4,18 +4,22 @@ import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
-async function uploadLogoIfProvided(formData: FormData, slug: string): Promise<string | null> {
-  const file = formData.get("logo");
+async function uploadImageIfProvided(
+  formData: FormData,
+  fieldName: string,
+  pathPrefix: string
+): Promise<string | null> {
+  const file = formData.get(fieldName);
   if (!(file instanceof File) || file.size === 0) return null;
 
   const ext = file.name.split(".").pop() || "png";
-  const path = `${slug}-${Date.now()}.${ext}`;
+  const path = `${pathPrefix}-${Date.now()}.${ext}`;
 
   const { error } = await supabaseAdmin.storage
     .from("restaurant-logos")
     .upload(path, file, { contentType: file.type, upsert: true });
 
-  if (error) throw new Error(`Échec de l'upload du logo : ${error.message}`);
+  if (error) throw new Error(`Échec de l'upload de l'image : ${error.message}`);
 
   const { data } = supabaseAdmin.storage.from("restaurant-logos").getPublicUrl(path);
   return data.publicUrl;
@@ -28,7 +32,7 @@ export async function createRestaurant(formData: FormData) {
   const slug = String(formData.get("slug") ?? "")
     .trim()
     .toLowerCase();
-  const colorTheme = String(formData.get("colorTheme") ?? "anthracite");
+  const backgroundColor = String(formData.get("backgroundColor") ?? "#27272a");
   const stampsRequired = Number(formData.get("stampsRequired") ?? 8);
   const rewardText = String(formData.get("rewardText") ?? "").trim();
   const welcomeOfferText = String(formData.get("welcomeOfferText") ?? "").trim();
@@ -43,8 +47,10 @@ export async function createRestaurant(formData: FormData) {
   }
 
   let logoUrl: string | null;
+  let backgroundImageUrl: string | null;
   try {
-    logoUrl = await uploadLogoIfProvided(formData, slug);
+    logoUrl = await uploadImageIfProvided(formData, "logo", `${slug}-logo`);
+    backgroundImageUrl = await uploadImageIfProvided(formData, "backgroundImage", `${slug}-bg`);
   } catch (err) {
     return redirect(`/admin/restaurants/new?error=${encodeURIComponent((err as Error).message)}`);
   }
@@ -64,7 +70,8 @@ export async function createRestaurant(formData: FormData) {
   const { error: insertError } = await supabaseAdmin.from("restaurants").insert({
     slug,
     name,
-    color_theme: colorTheme,
+    background_color: backgroundColor,
+    background_image_url: backgroundImageUrl,
     stamps_required: stampsRequired,
     reward_text: rewardText,
     welcome_offer_text: welcomeOfferText || null,
@@ -88,15 +95,18 @@ export async function updateRestaurant(formData: FormData) {
   const slug = String(formData.get("slug") ?? "")
     .trim()
     .toLowerCase();
-  const colorTheme = String(formData.get("colorTheme") ?? "anthracite");
+  const backgroundColor = String(formData.get("backgroundColor") ?? "#27272a");
+  const removeBackgroundImage = formData.get("removeBackgroundImage") === "on";
   const stampsRequired = Number(formData.get("stampsRequired") ?? 8);
   const rewardText = String(formData.get("rewardText") ?? "").trim();
   const welcomeOfferText = String(formData.get("welcomeOfferText") ?? "").trim();
   const address = String(formData.get("address") ?? "").trim();
 
   let logoUrl: string | null;
+  let backgroundImageUrl: string | null;
   try {
-    logoUrl = await uploadLogoIfProvided(formData, slug);
+    logoUrl = await uploadImageIfProvided(formData, "logo", `${slug}-logo`);
+    backgroundImageUrl = await uploadImageIfProvided(formData, "backgroundImage", `${slug}-bg`);
   } catch (err) {
     return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent((err as Error).message)}`);
   }
@@ -104,13 +114,18 @@ export async function updateRestaurant(formData: FormData) {
   const update: Record<string, unknown> = {
     name,
     slug,
-    color_theme: colorTheme,
+    background_color: backgroundColor,
     stamps_required: stampsRequired,
     reward_text: rewardText,
     welcome_offer_text: welcomeOfferText || null,
     address: address || null,
   };
   if (logoUrl) update.logo_url = logoUrl;
+  if (backgroundImageUrl) {
+    update.background_image_url = backgroundImageUrl;
+  } else if (removeBackgroundImage) {
+    update.background_image_url = null;
+  }
 
   const { error } = await supabaseAdmin.from("restaurants").update(update).eq("id", id);
 

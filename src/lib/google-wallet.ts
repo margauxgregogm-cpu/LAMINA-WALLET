@@ -1,13 +1,6 @@
 import "server-only";
 import jwt from "jsonwebtoken";
 
-const THEME_COLORS: Record<string, string> = {
-  anthracite: "#27272a",
-  white: "#f4f4f5",
-  gray: "#71717a",
-  navy: "#172554",
-};
-
 export function isGoogleWalletConfigured() {
   return Boolean(
     process.env.GOOGLE_WALLET_ISSUER_ID &&
@@ -22,7 +15,7 @@ const DEFAULT_LOGO_URL = "https://placehold.co/660x660/27272a/ffffff.png?text=LW
 export function buildGoogleWalletSaveUrl({
   restaurantId,
   restaurantName,
-  colorTheme,
+  backgroundColor,
   stampsRequired,
   rewardText,
   clientId,
@@ -32,7 +25,7 @@ export function buildGoogleWalletSaveUrl({
 }: {
   restaurantId: string;
   restaurantName: string;
-  colorTheme: string;
+  backgroundColor: string;
   stampsRequired: number;
   rewardText: string;
   clientId: string;
@@ -52,7 +45,7 @@ export function buildGoogleWalletSaveUrl({
     issuerName: "Lamina Wallet",
     programName: restaurantName,
     reviewStatus: "UNDER_REVIEW",
-    hexBackgroundColor: THEME_COLORS[colorTheme] ?? THEME_COLORS.anthracite,
+    hexBackgroundColor: backgroundColor,
     programLogo: {
       sourceUri: { uri: logoUrl || DEFAULT_LOGO_URL },
       contentDescription: {
