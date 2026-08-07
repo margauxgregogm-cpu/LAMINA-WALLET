@@ -1,30 +1,11 @@
 "use server";
 
-import { createClient } from "@/lib/supabase-server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { updateGoogleWalletStamps } from "@/lib/google-wallet";
-
-async function getAuthenticatedRestaurant() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) throw new Error("Non authentifié");
-
-  const { data: restaurant } = await supabaseAdmin
-    .from("restaurants")
-    .select("id, name, stamps_required, reward_text")
-    .eq("user_id", user.id)
-    .single();
-
-  if (!restaurant) throw new Error("Aucun restaurant associé à ce compte");
-
-  return restaurant;
-}
+import { requireAuthenticatedRestaurant } from "@/lib/restaurant-auth";
 
 export async function lookupClient(clientId: string) {
-  const restaurant = await getAuthenticatedRestaurant();
+  const restaurant = await requireAuthenticatedRestaurant();
 
   const { data: client, error } = await supabaseAdmin
     .from("clients")
@@ -45,11 +26,11 @@ export async function lookupClient(clientId: string) {
 }
 
 export async function recordVisit(clientId: string) {
-  const restaurant = await getAuthenticatedRestaurant();
+  const restaurant = await requireAuthenticatedRestaurant();
 
   const { data: client, error: fetchError } = await supabaseAdmin
     .from("clients")
-    .select("id, first_name, stamps")
+    .select("id, first_name, stamps, total_visits")
     .eq("id", clientId)
     .eq("restaurant_id", restaurant.id)
     .single();
@@ -64,7 +45,11 @@ export async function recordVisit(clientId: string) {
 
   const { error: updateError } = await supabaseAdmin
     .from("clients")
-    .update({ stamps: stampsAfter, last_visit_at: new Date().toISOString() })
+    .update({
+      stamps: stampsAfter,
+      total_visits: client.total_visits + 1,
+      last_visit_at: new Date().toISOString(),
+    })
     .eq("id", clientId);
 
   if (updateError) {
