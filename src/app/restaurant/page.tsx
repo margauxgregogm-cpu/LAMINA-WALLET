@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
+import QRCode from "qrcode";
 import { getAuthenticatedRestaurant } from "@/lib/restaurant-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { RestaurantNav } from "@/components/RestaurantNav";
@@ -19,9 +21,30 @@ export default async function RestaurantDashboardPage() {
     .order("total_visits", { ascending: false })
     .limit(10);
 
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const protocol = host?.startsWith("localhost") ? "http" : "https";
+  const publicUrl = `${protocol}://${host}/signup?r=${restaurant.slug}`;
+  const qrDataUrl = await QRCode.toDataURL(publicUrl, { width: 200, margin: 1 });
+
   return (
     <div className="flex flex-1 flex-col items-center gap-8 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
       <RestaurantNav restaurantName={restaurant.name} logoUrl={restaurant.logo_url} active="dashboard" />
+
+      <div className="flex w-full max-w-2xl flex-col items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <h2 className="mb-1 text-sm font-semibold">Inscrire un nouveau client</h2>
+        <p className="mb-2 text-center text-sm text-zinc-500">
+          Montrez ce QR code à un client pour qu&apos;il crée sa carte de fidélité.
+        </p>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={qrDataUrl} alt="QR code d'inscription" width={200} height={200} />
+        <a
+          href={publicUrl}
+          className="break-all text-center text-sm text-blue-600 underline dark:text-blue-400"
+        >
+          {publicUrl}
+        </a>
+      </div>
 
       <SearchClients />
 

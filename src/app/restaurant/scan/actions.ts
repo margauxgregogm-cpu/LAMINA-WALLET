@@ -25,18 +25,35 @@ export async function lookupClient(clientId: string) {
   };
 }
 
+function isSameCalendarDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 export async function recordVisit(clientId: string) {
   const restaurant = await requireAuthenticatedRestaurant();
 
   const { data: client, error: fetchError } = await supabaseAdmin
     .from("clients")
-    .select("id, first_name, stamps, total_visits")
+    .select("id, first_name, stamps, total_visits, last_visit_at")
     .eq("id", clientId)
     .eq("restaurant_id", restaurant.id)
     .single();
 
   if (fetchError || !client) {
     return { error: "Client introuvable pour ce restaurant." as const };
+  }
+
+  if (client.last_visit_at && isSameCalendarDay(new Date(client.last_visit_at), new Date())) {
+    return {
+      alreadyVisitedToday: true as const,
+      clientName: client.first_name,
+      stamps: client.stamps,
+      stampsRequired: restaurant.stamps_required,
+    };
   }
 
   const newStampCount = client.stamps + 1;
@@ -68,6 +85,7 @@ export async function recordVisit(clientId: string) {
   });
 
   return {
+    alreadyVisitedToday: false as const,
     clientName: client.first_name,
     stamps: stampsAfter,
     stampsRequired: restaurant.stamps_required,

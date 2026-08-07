@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export type AuthenticatedRestaurant = {
   id: string;
+  slug: string;
   name: string;
   stamps_required: number;
   reward_text: string;
@@ -20,7 +21,7 @@ export async function getAuthenticatedRestaurant(): Promise<AuthenticatedRestaur
 
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
-    .select("id, name, stamps_required, reward_text, logo_url")
+    .select("id, slug, name, stamps_required, reward_text, logo_url")
     .eq("user_id", user.id)
     .single();
 

@@ -20,11 +20,12 @@ type Lookup = {
 };
 
 type VisitResult = {
+  alreadyVisitedToday: boolean;
   clientName: string;
   stamps: number;
   stampsRequired: number;
-  rewardEarned: boolean;
-  rewardText: string;
+  rewardEarned?: boolean;
+  rewardText?: string;
 };
 
 export function ScanClient() {
@@ -33,6 +34,20 @@ export function ScanClient() {
   const [visitResult, setVisitResult] = useState<VisitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  function runScan(clientId: string) {
+    setError(null);
+    setLookup(null);
+    setVisitResult(null);
+    startTransition(async () => {
+      const result = await recordVisit(clientId.trim());
+      if ("error" in result) {
+        setError(result.error ?? "Erreur inconnue");
+        return;
+      }
+      setVisitResult(result);
+    });
+  }
 
   function runLookup(clientId: string) {
     setError(null);
@@ -63,7 +78,7 @@ export function ScanClient() {
 
   return (
     <div className="flex w-full max-w-sm flex-col gap-6">
-      <QrScanner onScan={runLookup} />
+      <QrScanner onScan={runScan} />
 
       <form
         onSubmit={(e) => {
@@ -125,7 +140,18 @@ export function ScanClient() {
         </div>
       )}
 
-      {visitResult && (
+      {visitResult && visitResult.alreadyVisitedToday && (
+        <div className="flex flex-col gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900 dark:bg-amber-950">
+          <div className="font-semibold text-amber-800 dark:text-amber-200">
+            {visitResult.clientName} a déjà un tampon aujourd&apos;hui.
+          </div>
+          <div className="text-sm text-amber-700 dark:text-amber-300">
+            Tampons : {visitResult.stamps} / {visitResult.stampsRequired} — 1 tampon max par jour.
+          </div>
+        </div>
+      )}
+
+      {visitResult && !visitResult.alreadyVisitedToday && (
         <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900 dark:bg-emerald-950">
           <div className="font-semibold text-emerald-800 dark:text-emerald-200">
             Visite enregistrée pour {visitResult.clientName} !
