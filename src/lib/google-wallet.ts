@@ -175,3 +175,72 @@ export async function updateGoogleWalletStamps({
     console.error("Google Wallet stamp update error:", err);
   }
 }
+
+// Updates the shared loyaltyClass for a restaurant so already-saved passes
+// pick up a design change (background color/image, logo) made in the admin.
+// Google only reads the class definition from the JWT the first time it's
+// created — later "save" links referencing the same classId don't overwrite
+// the stored class, so a design change needs an explicit PATCH here.
+// Best-effort: a 404 means no client has saved a pass for this restaurant
+// yet, so there's no class to update — not an error.
+export async function updateGoogleWalletClassDesign({
+  restaurantId,
+  restaurantName,
+  backgroundColor,
+  backgroundImageUrl,
+  logoUrl,
+}: {
+  restaurantId: string;
+  restaurantName: string;
+  backgroundColor: string;
+  backgroundImageUrl?: string | null;
+  logoUrl?: string | null;
+}) {
+  if (!isGoogleWalletConfigured()) return;
+
+  const issuerId = process.env.GOOGLE_WALLET_ISSUER_ID!;
+  const classId = `${issuerId}.restaurant_${restaurantId}`;
+
+  try {
+    const accessToken = await getGoogleWalletAccessToken();
+    const res = await fetch(
+      `https://walletobjects.googleapis.com/walletobjects/v1/loyaltyClass/${classId}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          // Omitting reviewStatus on a PATCH resets it to the schema default
+          // (APPROVED), which Google rejects for an unpublished issuer —
+          // it must be resent on every update, not just at creation.
+          reviewStatus: "UNDER_REVIEW",
+          hexBackgroundColor: backgroundColor,
+          programLogo: {
+            sourceUri: { uri: logoUrl || DEFAULT_LOGO_URL },
+            contentDescription: {
+              defaultValue: { language: "fr", value: `Logo ${restaurantName}` },
+            },
+          },
+          ...(backgroundImageUrl
+            ? {
+                heroImage: {
+                  sourceUri: { uri: backgroundImageUrl },
+                  contentDescription: {
+                    defaultValue: { language: "fr", value: `Fond ${restaurantName}` },
+                  },
+                },
+              }
+            : {}),
+        }),
+      }
+    );
+
+    if (!res.ok && res.status !== 404) {
+      console.error("Google Wallet class update failed:", res.status, await res.text());
+    }
+  } catch (err) {
+    console.error("Google Wallet class update error:", err);
+  }
+}

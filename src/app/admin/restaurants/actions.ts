@@ -1,8 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { updateGoogleWalletClassDesign } from "@/lib/google-wallet";
 
 // The client-side `pattern` attribute on the slug field is trivially
 // bypassed (JS-driven form fills, browsers that don't enforce it), so the
@@ -143,10 +145,29 @@ export async function updateRestaurant(formData: FormData) {
     update.background_image_url = null;
   }
 
-  const { error } = await supabaseAdmin.from("restaurants").update(update).eq("id", id);
+  const { data: updated, error } = await supabaseAdmin
+    .from("restaurants")
+    .update(update)
+    .eq("id", id)
+    .select("name, background_color, background_image_url, logo_url")
+    .single();
 
   if (error) {
     return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  // Best-effort, non-blocking: pushes the design change to any Google Wallet
+  // passes clients already saved for this restaurant.
+  if (updated) {
+    after(() =>
+      updateGoogleWalletClassDesign({
+        restaurantId: id,
+        restaurantName: updated.name,
+        backgroundColor: updated.background_color,
+        backgroundImageUrl: updated.background_image_url,
+        logoUrl: updated.logo_url,
+      })
+    );
   }
 
   redirect(`/admin/restaurants/${id}?saved=1`);
