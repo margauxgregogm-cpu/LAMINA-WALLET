@@ -7,6 +7,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { RestaurantNav } from "@/components/RestaurantNav";
 import { formatRelativeDate } from "@/lib/format-relative-date";
 import { SearchClients } from "./SearchClients";
+import { LiveDashboardUpdates } from "./LiveDashboardUpdates";
 
 export default async function RestaurantDashboardPage() {
   const restaurant = await getAuthenticatedRestaurant();
@@ -22,6 +23,13 @@ export default async function RestaurantDashboardPage() {
     .order("total_visits", { ascending: false })
     .limit(10);
 
+  const { data: recentClients } = await supabaseAdmin
+    .from("clients")
+    .select("id, first_name, last_name, created_at")
+    .eq("restaurant_id", restaurant.id)
+    .order("created_at", { ascending: false })
+    .limit(5);
+
   const headersList = await headers();
   const host = headersList.get("host");
   const protocol = host?.startsWith("localhost") ? "http" : "https";
@@ -30,6 +38,7 @@ export default async function RestaurantDashboardPage() {
 
   return (
     <div className="flex flex-1 flex-col items-center gap-8 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
+      <LiveDashboardUpdates restaurantId={restaurant.id} />
       <RestaurantNav restaurantName={restaurant.name} logoUrl={restaurant.logo_url} active="dashboard" />
 
       <div className="flex w-full max-w-2xl flex-col items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
@@ -48,6 +57,26 @@ export default async function RestaurantDashboardPage() {
       </div>
 
       <SearchClients />
+
+      {recentClients && recentClients.length > 0 && (
+        <div className="w-full max-w-2xl">
+          <h2 className="mb-3 text-lg font-semibold">Derniers inscrits</h2>
+          <div className="flex flex-col gap-2">
+            {recentClients.map((client) => (
+              <Link
+                key={client.id}
+                href={`/restaurant/clients/${client.id}`}
+                className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+              >
+                <span className="font-medium">
+                  {client.first_name} {client.last_name}
+                </span>
+                <span className="text-zinc-500">{formatRelativeDate(client.created_at)}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="w-full max-w-2xl">
         <h2 className="mb-3 text-lg font-semibold">Meilleurs clients</h2>
