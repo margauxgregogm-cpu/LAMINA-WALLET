@@ -1,12 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { QrScanner } from "@/components/QrScanner";
+import { LoyaltyCard } from "@/components/LoyaltyCard";
 import { lookupClient, recordVisit } from "./actions";
 
 type Client = {
   id: string;
   first_name: string;
+  last_name: string | null;
   email: string;
   stamps: number;
   is_vip: boolean;
@@ -21,37 +24,51 @@ type Lookup = {
 
 type VisitResult = {
   alreadyVisitedToday: boolean;
+  clientId: string;
   clientName: string;
+  clientFullName: string;
   stamps: number;
   stampsRequired: number;
   rewardEarned?: boolean;
-  rewardText?: string;
+  rewardText: string;
 };
 
-export function ScanClient() {
+export function ScanClient({
+  restaurantName,
+  logoUrl,
+  colorTheme,
+}: {
+  restaurantName: string;
+  logoUrl: string | null;
+  colorTheme: "anthracite" | "white" | "gray" | "navy";
+}) {
   const [manualId, setManualId] = useState("");
   const [lookup, setLookup] = useState<Lookup | null>(null);
-  const [visitResult, setVisitResult] = useState<VisitResult | null>(null);
+  const [overlayResult, setOverlayResult] = useState<VisitResult | null>(null);
+  const [lastClient, setLastClient] = useState<{ id: string; name: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  function showVisitResult(result: VisitResult) {
+    setOverlayResult(result);
+    setLastClient({ id: result.clientId, name: result.clientFullName });
+  }
 
   function runScan(clientId: string) {
     setError(null);
     setLookup(null);
-    setVisitResult(null);
     startTransition(async () => {
       const result = await recordVisit(clientId.trim());
       if ("error" in result) {
         setError(result.error ?? "Erreur inconnue");
         return;
       }
-      setVisitResult(result);
+      showVisitResult(result);
     });
   }
 
   function runLookup(clientId: string) {
     setError(null);
-    setVisitResult(null);
     startTransition(async () => {
       const result = await lookupClient(clientId.trim());
       if ("error" in result) {
@@ -71,14 +88,14 @@ export function ScanClient() {
         setError(result.error ?? "Erreur inconnue");
         return;
       }
-      setVisitResult(result);
       setLookup(null);
+      showVisitResult(result);
     });
   }
 
   return (
     <div className="flex w-full max-w-sm flex-col gap-6">
-      <QrScanner onScan={runScan} />
+      <QrScanner onScan={runScan} paused={!!overlayResult} />
 
       <form
         onSubmit={(e) => {
@@ -111,7 +128,9 @@ export function ScanClient() {
       {lookup && (
         <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
           <div>
-            <div className="text-lg font-semibold">{lookup.client.first_name}</div>
+            <div className="text-lg font-semibold">
+              {lookup.client.first_name} {lookup.client.last_name}
+            </div>
             <div className="text-sm text-zinc-500">{lookup.client.email}</div>
           </div>
           <div className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -140,31 +159,56 @@ export function ScanClient() {
         </div>
       )}
 
-      {visitResult && visitResult.alreadyVisitedToday && (
-        <div className="flex flex-col gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-900 dark:bg-amber-950">
-          <div className="font-semibold text-amber-800 dark:text-amber-200">
-            {visitResult.clientName} a déjà un tampon aujourd&apos;hui.
-          </div>
-          <div className="text-sm text-amber-700 dark:text-amber-300">
-            Tampons : {visitResult.stamps} / {visitResult.stampsRequired} — 1 tampon max par jour.
-          </div>
-        </div>
+      {lastClient && !overlayResult && (
+        <Link
+          href={`/restaurant/clients/${lastClient.id}`}
+          className="text-center text-sm text-zinc-600 underline underline-offset-2 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+        >
+          Dernier client scanné : {lastClient.name}
+        </Link>
       )}
 
-      {visitResult && !visitResult.alreadyVisitedToday && (
-        <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 dark:border-emerald-900 dark:bg-emerald-950">
-          <div className="font-semibold text-emerald-800 dark:text-emerald-200">
-            Visite enregistrée pour {visitResult.clientName} !
+      {overlayResult && (
+        <div
+          onClick={() => setOverlayResult(null)}
+          className="fixed inset-0 z-50 flex cursor-pointer flex-col items-center justify-center gap-6 bg-black/70 px-4 py-8"
+        >
+          <div onClick={(e) => e.stopPropagation()} className="flex w-full max-w-sm flex-col items-center gap-4">
+            {overlayResult.alreadyVisitedToday ? (
+              <div className="w-full rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-center dark:border-amber-800 dark:bg-amber-950">
+                <div className="font-semibold text-amber-800 dark:text-amber-200">
+                  ✓ Carte bien scannée
+                </div>
+                <div className="text-sm text-amber-700 dark:text-amber-300">
+                  {overlayResult.clientFullName} a déjà 1 tampon aujourd&apos;hui (max 1/jour).
+                </div>
+              </div>
+            ) : (
+              <div className="w-full rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-center dark:border-emerald-800 dark:bg-emerald-950">
+                <div className="font-semibold text-emerald-800 dark:text-emerald-200">
+                  Visite enregistrée pour {overlayResult.clientFullName} !
+                </div>
+                {overlayResult.rewardEarned && (
+                  <div className="text-sm text-emerald-700 dark:text-emerald-300">
+                    🎉 Récompense obtenue : {overlayResult.rewardText} — le compteur repart à 0.
+                  </div>
+                )}
+              </div>
+            )}
+
+            <LoyaltyCard
+              restaurantName={restaurantName}
+              logoInitials={restaurantName.slice(0, 2).toUpperCase()}
+              logoUrl={logoUrl}
+              stampsEarned={overlayResult.stamps}
+              stampsRequired={overlayResult.stampsRequired}
+              rewardText={overlayResult.rewardText}
+              memberName={overlayResult.clientFullName}
+              colorTheme={colorTheme}
+            />
+
+            <p className="text-sm text-white/80">Cliquez n&apos;importe où pour continuer</p>
           </div>
-          {visitResult.rewardEarned ? (
-            <div className="text-sm text-emerald-700 dark:text-emerald-300">
-              🎉 Récompense obtenue : {visitResult.rewardText} — le compteur repart à 0.
-            </div>
-          ) : (
-            <div className="text-sm text-emerald-700 dark:text-emerald-300">
-              Tampons : {visitResult.stamps} / {visitResult.stampsRequired}
-            </div>
-          )}
         </div>
       )}
     </div>

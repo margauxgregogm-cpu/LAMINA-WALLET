@@ -9,7 +9,7 @@ export async function lookupClient(clientId: string) {
 
   const { data: client, error } = await supabaseAdmin
     .from("clients")
-    .select("id, first_name, email, stamps, is_vip, last_visit_at")
+    .select("id, first_name, last_name, email, stamps, is_vip, last_visit_at")
     .eq("id", clientId)
     .eq("restaurant_id", restaurant.id)
     .single();
@@ -38,7 +38,7 @@ export async function recordVisit(clientId: string) {
 
   const { data: client, error: fetchError } = await supabaseAdmin
     .from("clients")
-    .select("id, first_name, stamps, total_visits, last_visit_at")
+    .select("id, first_name, last_name, stamps, total_visits, last_visit_at")
     .eq("id", clientId)
     .eq("restaurant_id", restaurant.id)
     .single();
@@ -50,9 +50,12 @@ export async function recordVisit(clientId: string) {
   if (client.last_visit_at && isSameCalendarDay(new Date(client.last_visit_at), new Date())) {
     return {
       alreadyVisitedToday: true as const,
+      clientId: client.id,
       clientName: client.first_name,
+      clientFullName: `${client.first_name} ${client.last_name ?? ""}`.trim(),
       stamps: client.stamps,
       stampsRequired: restaurant.stamps_required,
+      rewardText: restaurant.reward_text,
     };
   }
 
@@ -86,7 +89,9 @@ export async function recordVisit(clientId: string) {
 
   return {
     alreadyVisitedToday: false as const,
+    clientId: client.id,
     clientName: client.first_name,
+    clientFullName: `${client.first_name} ${client.last_name ?? ""}`.trim(),
     stamps: stampsAfter,
     stampsRequired: restaurant.stamps_required,
     rewardEarned,

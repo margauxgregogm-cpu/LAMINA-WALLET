@@ -12,6 +12,16 @@ export default async function AdminHomePage() {
     .select("id, name, slug, stamps_required")
     .order("created_at", { ascending: false });
 
+  const { data: allClients } = await supabaseAdmin.from("clients").select("restaurant_id");
+
+  const clientCountByRestaurant = new Map<string, number>();
+  for (const client of allClients ?? []) {
+    clientCountByRestaurant.set(
+      client.restaurant_id,
+      (clientCountByRestaurant.get(client.restaurant_id) ?? 0) + 1
+    );
+  }
+
   return (
     <div className="flex flex-1 flex-col items-center gap-8 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
       <AdminNav />
@@ -38,7 +48,10 @@ export default async function AdminHomePage() {
                 <div className="font-medium">{r.name}</div>
                 <div className="text-sm text-zinc-500">/signup?r={r.slug}</div>
               </div>
-              <span className="text-sm text-zinc-500">{r.stamps_required} tampons</span>
+              <div className="text-right text-sm text-zinc-500">
+                <div>{clientCountByRestaurant.get(r.id) ?? 0} personne(s)</div>
+                <div>{r.stamps_required} tampons</div>
+              </div>
             </Link>
           ))}
           {(!restaurants || restaurants.length === 0) && (

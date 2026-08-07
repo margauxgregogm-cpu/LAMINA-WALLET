@@ -5,7 +5,13 @@ import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 
 const ELEMENT_ID = "qr-scanner-region";
 
-export function QrScanner({ onScan }: { onScan: (decodedText: string) => void }) {
+export function QrScanner({
+  onScan,
+  paused = false,
+}: {
+  onScan: (decodedText: string) => void;
+  paused?: boolean;
+}) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const onScanRef = useRef(onScan);
 
@@ -38,9 +44,10 @@ export function QrScanner({ onScan }: { onScan: (decodedText: string) => void })
       // Check the live state rather than trusting the start() promise: under
       // React Strict Mode's mount/cleanup/remount dev cycle, start() can
       // resolve after the scanner has already been torn down, and calling
-      // stop() while not actually SCANNING throws.
+      // stop() while not actually running throws.
       try {
-        if (scanner.getState() === Html5QrcodeScannerState.SCANNING) {
+        const state = scanner.getState();
+        if (state === Html5QrcodeScannerState.SCANNING || state === Html5QrcodeScannerState.PAUSED) {
           scanner.stop().catch(() => {});
         }
       } catch {
@@ -48,6 +55,24 @@ export function QrScanner({ onScan }: { onScan: (decodedText: string) => void })
       }
     };
   }, []);
+
+  // Stop decoding new frames while a scan result is being shown, so the
+  // still-visible QR code doesn't immediately re-trigger onScan.
+  useEffect(() => {
+    const scanner = scannerRef.current;
+    if (!scanner) return;
+
+    try {
+      const state = scanner.getState();
+      if (paused && state === Html5QrcodeScannerState.SCANNING) {
+        scanner.pause(true);
+      } else if (!paused && state === Html5QrcodeScannerState.PAUSED) {
+        scanner.resume();
+      }
+    } catch {
+      // ignore — scanner may not be ready yet (e.g. camera denied)
+    }
+  }, [paused]);
 
   return (
     <div

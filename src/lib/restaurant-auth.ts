@@ -9,6 +9,7 @@ export type AuthenticatedRestaurant = {
   stamps_required: number;
   reward_text: string;
   logo_url: string | null;
+  color_theme: "anthracite" | "white" | "gray" | "navy";
 };
 
 export async function getAuthenticatedRestaurant(): Promise<AuthenticatedRestaurant | null> {
@@ -21,7 +22,7 @@ export async function getAuthenticatedRestaurant(): Promise<AuthenticatedRestaur
 
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
-    .select("id, slug, name, stamps_required, reward_text, logo_url")
+    .select("id, slug, name, stamps_required, reward_text, logo_url, color_theme")
     .eq("user_id", user.id)
     .single();
 

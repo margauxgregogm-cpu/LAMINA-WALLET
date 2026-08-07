@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import Link from "next/link";
 import QRCode from "qrcode";
 import { getAuthenticatedRestaurant } from "@/lib/restaurant-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -16,7 +17,7 @@ export default async function RestaurantDashboardPage() {
 
   const { data: topClients } = await supabaseAdmin
     .from("clients")
-    .select("id, first_name, total_visits, last_visit_at, is_vip")
+    .select("id, first_name, last_name, total_visits, last_visit_at, is_vip")
     .eq("restaurant_id", restaurant.id)
     .order("total_visits", { ascending: false })
     .limit(10);
@@ -65,7 +66,14 @@ export default async function RestaurantDashboardPage() {
               {(topClients ?? []).map((client, i) => (
                 <tr key={client.id} className="border-t border-zinc-200 dark:border-zinc-800">
                   <td className="px-4 py-2 text-zinc-500">{i + 1}</td>
-                  <td className="px-4 py-2 font-medium">{client.first_name}</td>
+                  <td className="px-4 py-2 font-medium">
+                    <Link
+                      href={`/restaurant/clients/${client.id}`}
+                      className="underline-offset-2 hover:underline"
+                    >
+                      {client.first_name} {client.last_name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-2">{client.total_visits}</td>
                   <td className="px-4 py-2">{formatRelativeDate(client.last_visit_at)}</td>
                   <td className="px-4 py-2">{client.is_vip ? "⭐" : ""}</td>

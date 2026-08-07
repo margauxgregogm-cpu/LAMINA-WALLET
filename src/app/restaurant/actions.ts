@@ -17,7 +17,7 @@ export async function searchClients(query: string) {
   if (UUID_PATTERN.test(trimmed)) {
     const { data } = await supabaseAdmin
       .from("clients")
-      .select("id, first_name, email, stamps, total_visits, is_vip, last_visit_at")
+      .select("id, first_name, last_name, email, stamps, total_visits, is_vip, last_visit_at")
       .eq("restaurant_id", restaurant.id)
       .eq("id", trimmed)
       .limit(1);
@@ -32,9 +32,9 @@ export async function searchClients(query: string) {
 
   const { data } = await supabaseAdmin
     .from("clients")
-    .select("id, first_name, email, stamps, total_visits, is_vip, last_visit_at")
+    .select("id, first_name, last_name, email, stamps, total_visits, is_vip, last_visit_at")
     .eq("restaurant_id", restaurant.id)
-    .or(`first_name.ilike.%${sanitized}%,email.ilike.%${sanitized}%`)
+    .or(`first_name.ilike.%${sanitized}%,last_name.ilike.%${sanitized}%,email.ilike.%${sanitized}%`)
     .order("first_name")
     .limit(20);
 

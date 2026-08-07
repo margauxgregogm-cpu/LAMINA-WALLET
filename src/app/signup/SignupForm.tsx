@@ -33,6 +33,18 @@ export function SignupForm({
       </div>
 
       <div>
+        <label htmlFor="lastName" className="mb-1 block text-sm font-medium">
+          Nom
+        </label>
+        <input
+          id="lastName"
+          name="lastName"
+          required
+          className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+        />
+      </div>
+
+      <div>
         <label htmlFor="email" className="mb-1 block text-sm font-medium">
           Email
         </label>

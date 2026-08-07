@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { searchClients, toggleVip } from "./actions";
 import { formatRelativeDate } from "@/lib/format-relative-date";
 
 type Client = {
   id: string;
   first_name: string;
+  last_name: string | null;
   email: string;
   stamps: number;
   total_visits: number;
@@ -73,9 +75,12 @@ export function SearchClients() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="font-semibold">
-                    {client.first_name} {client.is_vip && <span title="VIP">⭐</span>}
-                  </div>
+                  <Link
+                    href={`/restaurant/clients/${client.id}`}
+                    className="font-semibold underline-offset-2 hover:underline"
+                  >
+                    {client.first_name} {client.last_name} {client.is_vip && <span title="VIP">⭐</span>}
+                  </Link>
                   <div className="text-sm text-zinc-500">{client.email}</div>
                 </div>
                 <button
