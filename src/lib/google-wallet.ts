@@ -44,7 +44,7 @@ export function buildGoogleWalletSaveUrl({
 
   const loyaltyClass = {
     id: classId,
-    issuerName: "Lamina Wallet",
+    issuerName: "Carte de fidélité",
     programName: restaurantName,
     reviewStatus: "UNDER_REVIEW",
     hexBackgroundColor: backgroundColor,
@@ -235,6 +235,7 @@ export async function updateGoogleWalletClassDesign({
           // (APPROVED), which Google rejects for an unpublished issuer —
           // it must be resent on every update, not just at creation.
           reviewStatus: "UNDER_REVIEW",
+          issuerName: "Carte de fidélité",
           hexBackgroundColor: backgroundColor,
           programLogo: {
             sourceUri: { uri: logoUrl || DEFAULT_LOGO_URL },
