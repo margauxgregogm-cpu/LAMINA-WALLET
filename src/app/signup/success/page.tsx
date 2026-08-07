@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { LoyaltyCard } from "@/components/LoyaltyCard";
+import { buildGoogleWalletSaveUrl, isGoogleWalletConfigured } from "@/lib/google-wallet";
 
 export default async function SignupSuccessPage({
   searchParams,
@@ -21,7 +22,7 @@ export default async function SignupSuccessPage({
 
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
-    .select("name, color_theme, stamps_required, reward_text")
+    .select("name, color_theme, stamps_required, reward_text, logo_url")
     .eq("id", client.restaurant_id)
     .single();
 
@@ -31,6 +32,20 @@ export default async function SignupSuccessPage({
     width: 240,
     margin: 1,
   });
+
+  const googleWalletUrl = isGoogleWalletConfigured()
+    ? buildGoogleWalletSaveUrl({
+        restaurantId: client.restaurant_id,
+        restaurantName: restaurant.name,
+        colorTheme: restaurant.color_theme,
+        stampsRequired: restaurant.stamps_required,
+        rewardText: restaurant.reward_text,
+        clientId: client.id,
+        clientName: client.first_name,
+        stamps: client.stamps,
+        logoUrl: restaurant.logo_url,
+      })
+    : null;
 
   return (
     <div className="flex flex-1 flex-col items-center gap-8 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
@@ -65,16 +80,27 @@ export default async function SignupSuccessPage({
         >
           Ajouter à Apple Wallet
         </button>
-        <button
-          disabled
-          className="flex-1 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-medium text-white opacity-50 dark:bg-white dark:text-zinc-900"
-          title="Bientôt disponible"
-        >
-          Ajouter à Google Wallet
-        </button>
+        {googleWalletUrl ? (
+          <a
+            href={googleWalletUrl}
+            className="flex-1 rounded-xl bg-zinc-900 px-4 py-3 text-center text-sm font-medium text-white dark:bg-white dark:text-zinc-900"
+          >
+            Ajouter à Google Wallet
+          </a>
+        ) : (
+          <button
+            disabled
+            className="flex-1 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-medium text-white opacity-50 dark:bg-white dark:text-zinc-900"
+            title="Bientôt disponible"
+          >
+            Ajouter à Google Wallet
+          </button>
+        )}
       </div>
       <p className="text-xs text-zinc-400">
-        L&apos;ajout à Apple Wallet / Google Wallet arrive dans une prochaine étape.
+        {googleWalletUrl
+          ? "L'ajout à Apple Wallet arrive dans une prochaine étape."
+          : "L'ajout à Apple Wallet / Google Wallet arrive dans une prochaine étape."}
       </p>
     </div>
   );
