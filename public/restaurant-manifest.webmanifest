@@ -2,7 +2,7 @@
   "name": "Lamina Wallet — Restaurant",
   "short_name": "LW Restaurant",
   "description": "Scanner les cartes de fidélité et gérer les visites clients",
-  "start_url": "/restaurant",
+  "start_url": "/restaurant/scan",
   "scope": "/restaurant",
   "display": "standalone",
   "background_color": "#052e21",
