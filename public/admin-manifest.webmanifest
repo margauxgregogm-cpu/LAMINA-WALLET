@@ -1,0 +1,14 @@
+{
+  "name": "Lamina Wallet — Admin",
+  "short_name": "LW Admin",
+  "description": "Gestion des restaurants et de leurs cartes de fidélité",
+  "start_url": "/admin",
+  "scope": "/admin",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "icons": [
+    { "src": "/admin/pwa-icon?size=192", "sizes": "192x192", "type": "image/png" },
+    { "src": "/admin/pwa-icon?size=512", "sizes": "512x512", "type": "image/png" }
+  ]
+}
