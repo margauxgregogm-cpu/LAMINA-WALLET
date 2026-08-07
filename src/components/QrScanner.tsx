@@ -65,7 +65,14 @@ export function QrScanner({
     try {
       const state = scanner.getState();
       if (paused && state === Html5QrcodeScannerState.SCANNING) {
-        scanner.pause(true);
+        // Deliberately NOT passing `true` here (which would also freeze the
+        // visible video feed): the result overlay covers the whole screen
+        // anyway, and pausing the video feed makes html5-qrcode's resume()
+        // wait for the video to restart playing (+200ms baked into the
+        // library) before scanning resumes. Leaving the video feed running
+        // still fully stops decoding (see scanContext()'s isPaused() check),
+        // so resume() below hits its instant path instead.
+        scanner.pause();
       } else if (!paused && state === Html5QrcodeScannerState.PAUSED) {
         scanner.resume();
       }

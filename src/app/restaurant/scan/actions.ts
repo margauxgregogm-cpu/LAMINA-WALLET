@@ -26,12 +26,19 @@ export async function lookupClient(clientId: string) {
   };
 }
 
+// Vercel's serverless functions run in UTC, so comparing calendar days with
+// plain Date getters resets the 1-stamp-per-day cap at UTC midnight — 1-2h
+// after actual French midnight depending on DST. Compare the calendar date
+// as seen in Europe/Paris instead, so a client can rescan right at midnight.
+const PARIS_DAY_FORMAT = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Paris",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 function isSameCalendarDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+  return PARIS_DAY_FORMAT.format(a) === PARIS_DAY_FORMAT.format(b);
 }
 
 export async function recordVisit(clientId: string) {

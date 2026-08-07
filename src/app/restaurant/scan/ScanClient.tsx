@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { QrScanner } from "@/components/QrScanner";
 import { LoyaltyCard } from "@/components/LoyaltyCard";
@@ -59,10 +59,20 @@ export function ScanClient({
   const lastScanRef = useRef<{ id: string; at: number } | null>(null);
   const SCAN_COOLDOWN_MS = 10_000;
 
+  const OVERLAY_AUTO_DISMISS_MS = 5_000;
+
   function showVisitResult(result: VisitResult) {
     setOverlayResult(result);
     setLastClient({ id: result.clientId, name: result.clientFullName });
   }
+
+  // Auto-dismiss the result overlay if nobody taps to close it, so the next
+  // scan doesn't require an extra click.
+  useEffect(() => {
+    if (!overlayResult) return;
+    const timeout = setTimeout(() => setOverlayResult(null), OVERLAY_AUTO_DISMISS_MS);
+    return () => clearTimeout(timeout);
+  }, [overlayResult]);
 
   function runScan(clientId: string) {
     const trimmed = clientId.trim();
