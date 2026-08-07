@@ -31,11 +31,11 @@ export function SearchClients() {
   }
 
   function handleToggleVip(client: Client) {
-    startTransition(async () => {
-      await toggleVip(client.id, !client.is_vip);
-      setResults((prev) =>
-        prev.map((c) => (c.id === client.id ? { ...c, is_vip: !c.is_vip } : c))
-      );
+    const next = !client.is_vip;
+    // optimistic — flip immediately, revert if the save fails
+    setResults((prev) => prev.map((c) => (c.id === client.id ? { ...c, is_vip: next } : c)));
+    toggleVip(client.id, next).catch(() => {
+      setResults((prev) => prev.map((c) => (c.id === client.id ? { ...c, is_vip: !next } : c)));
     });
   }
 
@@ -85,8 +85,7 @@ export function SearchClients() {
                 </div>
                 <button
                   onClick={() => handleToggleVip(client)}
-                  disabled={isPending}
-                  className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                  className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
                 >
                   {client.is_vip ? "Retirer VIP" : "Marquer VIP"}
                 </button>

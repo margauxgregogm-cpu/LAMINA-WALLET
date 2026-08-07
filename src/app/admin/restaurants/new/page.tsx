@@ -66,6 +66,10 @@ export default async function NewRestaurantPage({
             <input name="welcomeOfferText" className={formInputClass} />
           </FormField>
 
+          <FormField label="Adresse (optionnel)">
+            <input name="address" className={formInputClass} />
+          </FormField>
+
           <FormField label="Logo (optionnel)">
             <input
               name="logo"

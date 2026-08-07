@@ -1,5 +1,6 @@
 "use server";
 
+import { after } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { updateGoogleWalletStamps } from "@/lib/google-wallet";
 import { requireAuthenticatedRestaurant } from "@/lib/restaurant-auth";
@@ -81,11 +82,16 @@ export async function recordVisit(clientId: string) {
     restaurant_id: restaurant.id,
   });
 
-  await updateGoogleWalletStamps({
-    clientId,
-    stamps: stampsAfter,
-    stampsRequired: restaurant.stamps_required,
-  });
+  // Don't block the response on Google's API — this is a best-effort sync
+  // (see updateGoogleWalletStamps) and the two external round-trips it makes
+  // were the main source of perceived click lag on the scan action.
+  after(() =>
+    updateGoogleWalletStamps({
+      clientId,
+      stamps: stampsAfter,
+      stampsRequired: restaurant.stamps_required,
+    })
+  );
 
   return {
     alreadyVisitedToday: false as const,

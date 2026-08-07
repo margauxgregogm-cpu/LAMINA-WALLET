@@ -32,6 +32,7 @@ export async function createRestaurant(formData: FormData) {
   const stampsRequired = Number(formData.get("stampsRequired") ?? 8);
   const rewardText = String(formData.get("rewardText") ?? "").trim();
   const welcomeOfferText = String(formData.get("welcomeOfferText") ?? "").trim();
+  const address = String(formData.get("address") ?? "").trim();
   const loginEmail = String(formData.get("loginEmail") ?? "").trim();
   const loginPassword = String(formData.get("loginPassword") ?? "");
 
@@ -67,6 +68,7 @@ export async function createRestaurant(formData: FormData) {
     stamps_required: stampsRequired,
     reward_text: rewardText,
     welcome_offer_text: welcomeOfferText || null,
+    address: address || null,
     logo_url: logoUrl,
     user_id: authUser.user.id,
   });
@@ -90,6 +92,7 @@ export async function updateRestaurant(formData: FormData) {
   const stampsRequired = Number(formData.get("stampsRequired") ?? 8);
   const rewardText = String(formData.get("rewardText") ?? "").trim();
   const welcomeOfferText = String(formData.get("welcomeOfferText") ?? "").trim();
+  const address = String(formData.get("address") ?? "").trim();
 
   let logoUrl: string | null;
   try {
@@ -105,6 +108,7 @@ export async function updateRestaurant(formData: FormData) {
     stamps_required: stampsRequired,
     reward_text: rewardText,
     welcome_offer_text: welcomeOfferText || null,
+    address: address || null,
   };
   if (logoUrl) update.logo_url = logoUrl;
 

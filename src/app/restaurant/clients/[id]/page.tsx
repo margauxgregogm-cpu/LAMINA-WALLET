@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import QRCode from "qrcode";
 import { getAuthenticatedRestaurant } from "@/lib/restaurant-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { LoyaltyCard } from "@/components/LoyaltyCard";
@@ -34,7 +33,6 @@ export default async function ClientDetailPage({
 
   if (!client) notFound();
 
-  const qrDataUrl = await QRCode.toDataURL(client.id, { width: 200, margin: 1 });
   const fullName = `${client.first_name} ${client.last_name ?? ""}`.trim();
 
   return (
@@ -57,12 +55,6 @@ export default async function ClientDetailPage({
         rewardText={restaurant.reward_text}
         memberName={fullName}
       />
-
-      <div className="flex flex-col items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={qrDataUrl} alt="QR code du client" width={180} height={180} />
-        <p className="text-xs text-zinc-500">À scanner si le client a oublié sa carte</p>
-      </div>
 
       <div className="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
         <div className="grid grid-cols-3 gap-4 text-center">
