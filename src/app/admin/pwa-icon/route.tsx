@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
           fontSize: size * 0.42,
         }}
       >
-        LW
+        LF
       </div>
     ),
     { width: size, height: size }

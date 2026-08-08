@@ -20,13 +20,17 @@ function slugify(input: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+// Returns { url: null, error } instead of throwing on failure — a rejected
+// upload (oversized file, wrong format, etc.) should not block creating or
+// saving the rest of the restaurant's info, which previously discarded
+// everything the admin had typed in.
 async function uploadImageIfProvided(
   formData: FormData,
   fieldName: string,
   pathPrefix: string
-): Promise<string | null> {
+): Promise<{ url: string | null; error: string | null }> {
   const file = formData.get(fieldName);
-  if (!(file instanceof File) || file.size === 0) return null;
+  if (!(file instanceof File) || file.size === 0) return { url: null, error: null };
 
   const ext = file.name.split(".").pop() || "png";
   const path = `${pathPrefix}-${Date.now()}.${ext}`;
@@ -35,10 +39,10 @@ async function uploadImageIfProvided(
     .from("restaurant-logos")
     .upload(path, file, { contentType: file.type, upsert: true });
 
-  if (error) throw new Error(`Échec de l'upload de l'image : ${error.message}`);
+  if (error) return { url: null, error: error.message };
 
   const { data } = supabaseAdmin.storage.from("restaurant-logos").getPublicUrl(path);
-  return data.publicUrl;
+  return { url: data.publicUrl, error: null };
 }
 
 export async function createRestaurant(formData: FormData) {
@@ -60,14 +64,16 @@ export async function createRestaurant(formData: FormData) {
     );
   }
 
-  let logoUrl: string | null;
-  let backgroundImageUrl: string | null;
-  try {
-    logoUrl = await uploadImageIfProvided(formData, "logo", `${slug}-logo`);
-    backgroundImageUrl = await uploadImageIfProvided(formData, "backgroundImage", `${slug}-bg`);
-  } catch (err) {
-    return redirect(`/admin/restaurants/new?error=${encodeURIComponent((err as Error).message)}`);
-  }
+  const logoResult = await uploadImageIfProvided(formData, "logo", `${slug}-logo`);
+  const backgroundResult = await uploadImageIfProvided(formData, "backgroundImage", `${slug}-bg`);
+  const logoUrl = logoResult.url;
+  const backgroundImageUrl = backgroundResult.url;
+  // A failed image upload (too large, wrong format, etc.) shouldn't discard
+  // everything else the admin typed in — the restaurant is still created,
+  // just without that image, and the issue is surfaced afterward instead.
+  const uploadWarnings = [logoResult.error, backgroundResult.error].filter(
+    (e): e is string => e !== null
+  );
 
   const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
     email: loginEmail,
@@ -81,21 +87,33 @@ export async function createRestaurant(formData: FormData) {
     );
   }
 
-  const { error: insertError } = await supabaseAdmin.from("restaurants").insert({
-    slug,
-    name,
-    background_color: backgroundColor,
-    background_image_url: backgroundImageUrl,
-    stamps_required: stampsRequired,
-    reward_text: rewardText,
-    welcome_offer_text: welcomeOfferText || null,
-    address: address || null,
-    logo_url: logoUrl,
-    user_id: authUser.user.id,
-  });
+  const { data: created, error: insertError } = await supabaseAdmin
+    .from("restaurants")
+    .insert({
+      slug,
+      name,
+      background_color: backgroundColor,
+      background_image_url: backgroundImageUrl,
+      stamps_required: stampsRequired,
+      reward_text: rewardText,
+      welcome_offer_text: welcomeOfferText || null,
+      address: address || null,
+      logo_url: logoUrl,
+      user_id: authUser.user.id,
+    })
+    .select("id")
+    .single();
 
   if (insertError) {
     return redirect(`/admin/restaurants/new?error=${encodeURIComponent(insertError.message)}`);
+  }
+
+  if (uploadWarnings.length > 0) {
+    return redirect(
+      `/admin/restaurants/${created.id}?error=${encodeURIComponent(
+        `Restaurant créé, mais l'upload a échoué pour : ${uploadWarnings.join(" ; ")}`
+      )}`
+    );
   }
 
   redirect("/admin");
@@ -120,14 +138,13 @@ export async function updateRestaurant(formData: FormData) {
     );
   }
 
-  let logoUrl: string | null;
-  let backgroundImageUrl: string | null;
-  try {
-    logoUrl = await uploadImageIfProvided(formData, "logo", `${slug}-logo`);
-    backgroundImageUrl = await uploadImageIfProvided(formData, "backgroundImage", `${slug}-bg`);
-  } catch (err) {
-    return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent((err as Error).message)}`);
-  }
+  const logoResult = await uploadImageIfProvided(formData, "logo", `${slug}-logo`);
+  const backgroundResult = await uploadImageIfProvided(formData, "backgroundImage", `${slug}-bg`);
+  const logoUrl = logoResult.url;
+  const backgroundImageUrl = backgroundResult.url;
+  const uploadWarnings = [logoResult.error, backgroundResult.error].filter(
+    (e): e is string => e !== null
+  );
 
   const update: Record<string, unknown> = {
     name,
@@ -167,6 +184,14 @@ export async function updateRestaurant(formData: FormData) {
         backgroundImageUrl: updated.background_image_url,
         logoUrl: updated.logo_url,
       })
+    );
+  }
+
+  if (uploadWarnings.length > 0) {
+    return redirect(
+      `/admin/restaurants/${id}?error=${encodeURIComponent(
+        `Le reste a été enregistré, mais l'upload a échoué pour : ${uploadWarnings.join(" ; ")}`
+      )}`
     );
   }
 

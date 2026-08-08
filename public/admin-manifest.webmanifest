@@ -1,6 +1,6 @@
 {
-  "name": "Lamina Wallet — Admin",
-  "short_name": "LW Admin",
+  "name": "Lamina Fidelity — Admin",
+  "short_name": "Lamina Admin",
   "description": "Gestion des restaurants et de leurs cartes de fidélité",
   "start_url": "/admin",
   "scope": "/admin",

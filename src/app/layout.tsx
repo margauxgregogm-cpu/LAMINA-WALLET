@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Lamina Wallet",
+  title: "Lamina Fidelity",
   description: "Cartes de fidélité numériques pour Apple Wallet et Google Wallet",
 };
 

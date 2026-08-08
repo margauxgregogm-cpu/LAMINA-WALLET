@@ -2,10 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
 
 export const metadata: Metadata = {
-  title: "Lamina Wallet — Admin",
+  title: "Lamina Fidelity — Admin",
   manifest: "/admin-manifest.webmanifest",
   appleWebApp: {
-    title: "LW Admin",
+    title: "Lamina Admin",
     statusBarStyle: "black-translucent",
   },
 };

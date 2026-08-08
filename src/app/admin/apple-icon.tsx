@@ -20,7 +20,7 @@ export default function AppleIcon() {
           fontSize: 76,
         }}
       >
-        LW
+        LF
       </div>
     ),
     { ...size }

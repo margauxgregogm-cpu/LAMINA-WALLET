@@ -1,6 +1,6 @@
 {
-  "name": "Lamina Wallet — Restaurant",
-  "short_name": "LW Restaurant",
+  "name": "Lamina Fidelity — Entreprise",
+  "short_name": "Lamina Ent.",
   "description": "Scanner les cartes de fidélité et gérer les visites clients",
   "start_url": "/restaurant/scan",
   "scope": "/restaurant",
