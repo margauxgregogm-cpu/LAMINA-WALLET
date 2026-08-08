@@ -4,7 +4,7 @@ import fs from "fs";
 import path from "path";
 
 const logoBase64 = fs
-  .readFileSync(path.join(process.cwd(), "public", "lamina-logo.png"))
+  .readFileSync(path.join(process.cwd(), "public", "lamina-logo-admin.png"))
   .toString("base64");
 
 export async function GET(request: NextRequest) {
