@@ -129,7 +129,6 @@ export default async function AdminHomePage({
                       )}
                       <div>
                         <div className="font-medium">{r.name}</div>
-                        <div className="text-sm text-zinc-500">/signup?r={r.slug}</div>
                         {r.user_id && emailByUserId.get(r.user_id) && (
                           <div className="text-sm text-zinc-500">{emailByUserId.get(r.user_id)}</div>
                         )}
