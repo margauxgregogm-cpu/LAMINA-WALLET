@@ -7,6 +7,7 @@ import { AdminNav } from "@/components/AdminNav";
 import { FormField, formInputClass } from "@/components/FormField";
 import { ColorSwatchPicker } from "@/components/ColorSwatchPicker";
 import { SubmitButton } from "@/components/SubmitButton";
+import { BUSINESS_CATEGORIES } from "@/lib/business-categories";
 import { updateRestaurant, resetRestaurantPassword } from "../actions";
 import { DeleteRestaurantButton } from "../DeleteRestaurantButton";
 
@@ -73,8 +74,19 @@ export default async function EditRestaurantPage({
         <form action={updateRestaurant} className="space-y-4" encType="multipart/form-data">
           <input type="hidden" name="id" value={restaurant.id} />
 
-          <FormField label="Nom du restaurant">
+          <FormField label="Nom de l'entreprise">
             <input name="name" defaultValue={restaurant.name} required className={formInputClass} />
+          </FormField>
+
+          <FormField label="Catégorie">
+            <select name="category" defaultValue={restaurant.category ?? ""} className={formInputClass}>
+              <option value="">Choisir une catégorie...</option>
+              {BUSINESS_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </FormField>
 
           <FormField label="Lien public (slug)">

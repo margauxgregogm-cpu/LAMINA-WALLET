@@ -6,6 +6,7 @@ import { LoyaltyCard } from "@/components/LoyaltyCard";
 import { FormField, formInputClass } from "@/components/FormField";
 import { SubmitButton } from "@/components/SubmitButton";
 import { formatRelativeDate } from "@/lib/format-relative-date";
+import { computeVisitFrequency } from "@/lib/visit-frequency";
 import { updateClient } from "../actions";
 import { DeleteClientButton } from "../DeleteClientButton";
 import { VipToggle } from "../VipToggle";
@@ -35,6 +36,15 @@ export default async function ClientDetailPage({
   if (!client) notFound();
 
   const fullName = `${client.first_name} ${client.last_name ?? ""}`.trim();
+
+  const { data: visits } = await supabaseAdmin
+    .from("visits")
+    .select("created_at")
+    .eq("client_id", client.id)
+    .order("created_at", { ascending: false });
+
+  const visitDates = (visits ?? []).map((v) => new Date(v.created_at));
+  const frequency = computeVisitFrequency(visitDates);
 
   return (
     <div className="flex flex-1 flex-col items-center gap-6 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
@@ -79,6 +89,36 @@ export default async function ClientDetailPage({
         <div className="mt-4 flex justify-center">
           <VipToggle clientId={client.id} initialIsVip={client.is_vip} />
         </div>
+      </div>
+
+      <div className="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <h2 className="mb-3 text-sm font-semibold text-zinc-500">Fréquence de visite</h2>
+        <div className="mb-1 text-lg font-semibold">{frequency.label}</div>
+        <p className="text-sm text-zinc-500">{frequency.detail}</p>
+
+        {visitDates.length > 0 && (
+          <>
+            <hr className="my-4 border-zinc-200 dark:border-zinc-800" />
+            <h3 className="mb-2 text-sm font-semibold text-zinc-500">
+              Historique des visites ({visitDates.length})
+            </h3>
+            <ul className="flex flex-wrap gap-2">
+              {visitDates.slice(0, 12).map((date, i) => (
+                <li
+                  key={i}
+                  className="rounded-lg bg-zinc-100 px-2 py-1 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                >
+                  {date.toLocaleDateString("fr-FR")}
+                </li>
+              ))}
+              {visitDates.length > 12 && (
+                <li className="px-2 py-1 text-xs text-zinc-400">
+                  + {visitDates.length - 12} autre(s)
+                </li>
+              )}
+            </ul>
+          </>
+        )}
       </div>
 
       <div className="w-full max-w-lg">

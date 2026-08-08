@@ -11,7 +11,7 @@ export function LiveDashboardUpdates({ restaurantId }: { restaurantId: string })
   const router = useRouter();
 
   useEffect(() => {
-    const supabase = createClient();
+    const supabase = createClient("restaurant");
     let cancelled = false;
     let channel: ReturnType<typeof supabase.channel> | null = null;
 

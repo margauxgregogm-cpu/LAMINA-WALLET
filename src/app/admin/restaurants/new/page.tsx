@@ -4,6 +4,7 @@ import { AdminNav } from "@/components/AdminNav";
 import { FormField, formInputClass } from "@/components/FormField";
 import { ColorSwatchPicker } from "@/components/ColorSwatchPicker";
 import { SubmitButton } from "@/components/SubmitButton";
+import { BUSINESS_CATEGORIES } from "@/lib/business-categories";
 import { createRestaurant } from "../actions";
 
 export default async function NewRestaurantPage({
@@ -20,7 +21,7 @@ export default async function NewRestaurantPage({
       <AdminNav />
 
       <div className="w-full max-w-lg">
-        <h1 className="mb-4 text-xl font-semibold">Nouveau restaurant</h1>
+        <h1 className="mb-4 text-xl font-semibold">Nouvelle entreprise</h1>
 
         {error && (
           <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
@@ -29,8 +30,19 @@ export default async function NewRestaurantPage({
         )}
 
         <form action={createRestaurant} className="space-y-4" encType="multipart/form-data">
-          <FormField label="Nom du restaurant">
+          <FormField label="Nom de l'entreprise">
             <input name="name" required className={formInputClass} />
+          </FormField>
+
+          <FormField label="Catégorie">
+            <select name="category" defaultValue="" className={formInputClass}>
+              <option value="">Choisir une catégorie...</option>
+              {BUSINESS_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </FormField>
 
           <FormField

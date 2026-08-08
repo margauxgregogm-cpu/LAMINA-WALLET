@@ -3,14 +3,23 @@ import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { AdminNav } from "@/components/AdminNav";
+import { LiveAdminUpdates } from "./LiveAdminUpdates";
 
-export default async function AdminHomePage() {
+const NO_CATEGORY = "Sans catégorie";
+
+export default async function AdminHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; category?: string }>;
+}) {
   if (!(await isAdmin())) redirect("/admin/login");
 
-  const { data: restaurants } = await supabaseAdmin
+  const { q, category } = await searchParams;
+
+  const { data: allRestaurants } = await supabaseAdmin
     .from("restaurants")
-    .select("id, name, slug, stamps_required")
-    .order("created_at", { ascending: false });
+    .select("id, name, slug, stamps_required, category")
+    .order("name", { ascending: true });
 
   const { data: allClients } = await supabaseAdmin.from("clients").select("restaurant_id");
 
@@ -22,40 +31,100 @@ export default async function AdminHomePage() {
     );
   }
 
+  const categories = Array.from(
+    new Set((allRestaurants ?? []).map((r) => r.category).filter((c): c is string => !!c))
+  ).sort((a, b) => a.localeCompare(b));
+
+  const search = (q ?? "").trim().toLowerCase();
+  const filtered = (allRestaurants ?? []).filter((r) => {
+    if (search && !r.name.toLowerCase().includes(search)) return false;
+    if (category && (r.category ?? NO_CATEGORY) !== category) return false;
+    return true;
+  });
+
+  const grouped = new Map<string, typeof filtered>();
+  for (const r of filtered) {
+    const key = r.category ?? NO_CATEGORY;
+    if (!grouped.has(key)) grouped.set(key, []);
+    grouped.get(key)!.push(r);
+  }
+  const groupNames = Array.from(grouped.keys()).sort((a, b) => {
+    if (a === NO_CATEGORY) return 1;
+    if (b === NO_CATEGORY) return -1;
+    return a.localeCompare(b);
+  });
+
   return (
     <div className="flex flex-1 flex-col items-center gap-8 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
+      <LiveAdminUpdates />
       <AdminNav />
 
       <div className="w-full max-w-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Restaurants</h2>
+          <h2 className="text-lg font-semibold">Entreprises</h2>
           <Link
             href="/admin/restaurants/new"
             className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-zinc-900"
           >
-            + Nouveau restaurant
+            + Nouvelle entreprise
           </Link>
         </div>
 
-        <div className="flex flex-col gap-2">
-          {(restaurants ?? []).map((r) => (
-            <Link
-              key={r.id}
-              href={`/admin/restaurants/${r.id}`}
-              className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
-            >
-              <div>
-                <div className="font-medium">{r.name}</div>
-                <div className="text-sm text-zinc-500">/signup?r={r.slug}</div>
+        <form method="GET" className="mb-6 flex flex-col gap-2 sm:flex-row">
+          <input
+            type="text"
+            name="q"
+            defaultValue={q ?? ""}
+            placeholder="Rechercher une entreprise..."
+            className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          />
+          <select
+            name="category"
+            defaultValue={category ?? ""}
+            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          >
+            <option value="">Toutes les catégories</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+            <option value={NO_CATEGORY}>{NO_CATEGORY}</option>
+          </select>
+          <button
+            type="submit"
+            className="shrink-0 rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          >
+            Filtrer
+          </button>
+        </form>
+
+        <div className="flex flex-col gap-6">
+          {groupNames.map((groupName) => (
+            <div key={groupName}>
+              <h3 className="mb-2 text-sm font-semibold text-zinc-500">{groupName}</h3>
+              <div className="flex flex-col gap-2">
+                {grouped.get(groupName)!.map((r) => (
+                  <Link
+                    key={r.id}
+                    href={`/admin/restaurants/${r.id}`}
+                    className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+                  >
+                    <div>
+                      <div className="font-medium">{r.name}</div>
+                      <div className="text-sm text-zinc-500">/signup?r={r.slug}</div>
+                    </div>
+                    <div className="text-right text-sm text-zinc-500">
+                      <div>{clientCountByRestaurant.get(r.id) ?? 0} personne(s)</div>
+                      <div>{r.stamps_required} tampons</div>
+                    </div>
+                  </Link>
+                ))}
               </div>
-              <div className="text-right text-sm text-zinc-500">
-                <div>{clientCountByRestaurant.get(r.id) ?? 0} personne(s)</div>
-                <div>{r.stamps_required} tampons</div>
-              </div>
-            </Link>
+            </div>
           ))}
-          {(!restaurants || restaurants.length === 0) && (
-            <p className="text-sm text-zinc-500">Aucun restaurant pour le moment.</p>
+          {filtered.length === 0 && (
+            <p className="text-sm text-zinc-500">Aucune entreprise ne correspond.</p>
           )}
         </div>
       </div>

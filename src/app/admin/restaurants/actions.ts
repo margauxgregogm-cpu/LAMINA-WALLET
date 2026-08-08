@@ -50,6 +50,7 @@ export async function createRestaurant(formData: FormData) {
 
   const name = String(formData.get("name") ?? "").trim();
   const slug = slugify(String(formData.get("slug") ?? ""));
+  const category = String(formData.get("category") ?? "").trim();
   const backgroundColor = String(formData.get("backgroundColor") ?? "#27272a");
   const stampsRequired = Number(formData.get("stampsRequired") ?? 8);
   const rewardText = String(formData.get("rewardText") ?? "").trim();
@@ -92,6 +93,7 @@ export async function createRestaurant(formData: FormData) {
     .insert({
       slug,
       name,
+      category: category || null,
       background_color: backgroundColor,
       background_image_url: backgroundImageUrl,
       stamps_required: stampsRequired,
@@ -125,6 +127,7 @@ export async function updateRestaurant(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const slug = slugify(String(formData.get("slug") ?? ""));
+  const category = String(formData.get("category") ?? "").trim();
   const backgroundColor = String(formData.get("backgroundColor") ?? "#27272a");
   const removeBackgroundImage = formData.get("removeBackgroundImage") === "on";
   const stampsRequired = Number(formData.get("stampsRequired") ?? 8);
@@ -149,6 +152,7 @@ export async function updateRestaurant(formData: FormData) {
   const update: Record<string, unknown> = {
     name,
     slug,
+    category: category || null,
     background_color: backgroundColor,
     stamps_required: stampsRequired,
     reward_text: rewardText,
