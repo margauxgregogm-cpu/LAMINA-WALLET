@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { AdminNav } from "@/components/AdminNav";
 import { FormField, formInputClass } from "@/components/FormField";
 import { ColorSwatchPicker } from "@/components/ColorSwatchPicker";
+import { SubmitButton } from "@/components/SubmitButton";
 import { updateRestaurant, resetRestaurantPassword } from "../actions";
 import { DeleteRestaurantButton } from "../DeleteRestaurantButton";
 
@@ -44,7 +45,7 @@ export default async function EditRestaurantPage({
 
         {saved && (
           <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-            Modifications enregistrées.
+            Profil bien modifié.
           </p>
         )}
         {passwordReset && (
@@ -170,12 +171,12 @@ export default async function EditRestaurantPage({
             />
           </FormField>
 
-          <button
-            type="submit"
-            className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          <SubmitButton
+            pendingChildren="Enregistrement..."
+            className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
             Enregistrer
-          </button>
+          </SubmitButton>
         </form>
 
         <hr className="my-8 border-zinc-200 dark:border-zinc-800" />
@@ -191,12 +192,12 @@ export default async function EditRestaurantPage({
             minLength={6}
             className={formInputClass}
           />
-          <button
-            type="submit"
-            className="shrink-0 rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+          <SubmitButton
+            pendingChildren="..."
+            className="shrink-0 rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-700 dark:hover:bg-zinc-800"
           >
             Réinitialiser
-          </button>
+          </SubmitButton>
         </form>
 
         <hr className="my-8 border-zinc-200 dark:border-zinc-800" />

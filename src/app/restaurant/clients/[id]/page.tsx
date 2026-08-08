@@ -4,6 +4,7 @@ import { getAuthenticatedRestaurant } from "@/lib/restaurant-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { LoyaltyCard } from "@/components/LoyaltyCard";
 import { FormField, formInputClass } from "@/components/FormField";
+import { SubmitButton } from "@/components/SubmitButton";
 import { formatRelativeDate } from "@/lib/format-relative-date";
 import { updateClient } from "../actions";
 import { DeleteClientButton } from "../DeleteClientButton";
@@ -85,7 +86,7 @@ export default async function ClientDetailPage({
 
         {saved && (
           <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-            Modifications enregistrées.
+            Profil bien modifié.
           </p>
         )}
         {error && (
@@ -115,12 +116,12 @@ export default async function ClientDetailPage({
             <input name="phone" type="tel" defaultValue={client.phone ?? ""} className={formInputClass} />
           </FormField>
 
-          <button
-            type="submit"
-            className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          <SubmitButton
+            pendingChildren="Enregistrement..."
+            className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
             Enregistrer
-          </button>
+          </SubmitButton>
         </form>
 
         <hr className="my-8 border-zinc-200 dark:border-zinc-800" />

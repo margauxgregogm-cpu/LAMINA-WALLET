@@ -1,4 +1,5 @@
 import { loginAdmin } from "./actions";
+import { SubmitButton } from "@/components/SubmitButton";
 
 export default async function AdminLoginPage({
   searchParams,
@@ -49,12 +50,12 @@ export default async function AdminLoginPage({
           />
         </div>
 
-        <button
-          type="submit"
-          className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+        <SubmitButton
+          pendingChildren="Connexion..."
+          className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
         >
           Se connecter
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

@@ -3,6 +3,7 @@ import { isAdmin } from "@/lib/admin-auth";
 import { AdminNav } from "@/components/AdminNav";
 import { FormField, formInputClass } from "@/components/FormField";
 import { ColorSwatchPicker } from "@/components/ColorSwatchPicker";
+import { SubmitButton } from "@/components/SubmitButton";
 import { createRestaurant } from "../actions";
 
 export default async function NewRestaurantPage({
@@ -101,12 +102,12 @@ export default async function NewRestaurantPage({
             <input name="loginPassword" type="text" required minLength={8} className={formInputClass} />
           </FormField>
 
-          <button
-            type="submit"
-            className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          <SubmitButton
+            pendingChildren="Création..."
+            className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
             Créer le restaurant
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </div>

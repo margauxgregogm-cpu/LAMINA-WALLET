@@ -16,25 +16,29 @@ export default async function RestaurantDashboardPage() {
     redirect("/restaurant/login?error=Aucun%20restaurant%20associé%20à%20ce%20compte");
   }
 
-  const { data: topClients } = await supabaseAdmin
-    .from("clients")
-    .select("id, first_name, last_name, total_visits, last_visit_at, is_vip")
-    .eq("restaurant_id", restaurant.id)
-    .order("total_visits", { ascending: false })
-    .limit(10);
-
-  const { data: recentClients } = await supabaseAdmin
-    .from("clients")
-    .select("id, first_name, last_name, created_at")
-    .eq("restaurant_id", restaurant.id)
-    .order("created_at", { ascending: false })
-    .limit(5);
-
   const headersList = await headers();
   const host = headersList.get("host");
   const protocol = host?.startsWith("localhost") ? "http" : "https";
   const publicUrl = `${protocol}://${host}/signup?r=${restaurant.slug}`;
-  const qrDataUrl = await QRCode.toDataURL(publicUrl, { width: 200, margin: 1 });
+
+  // These three don't depend on each other — running them in parallel
+  // instead of sequential awaits noticeably speeds up loading this page,
+  // which was the main source of the dashboard feeling slow to open.
+  const [{ data: topClients }, { data: recentClients }, qrDataUrl] = await Promise.all([
+    supabaseAdmin
+      .from("clients")
+      .select("id, first_name, last_name, total_visits, last_visit_at, is_vip")
+      .eq("restaurant_id", restaurant.id)
+      .order("total_visits", { ascending: false })
+      .limit(10),
+    supabaseAdmin
+      .from("clients")
+      .select("id, first_name, last_name, created_at")
+      .eq("restaurant_id", restaurant.id)
+      .order("created_at", { ascending: false })
+      .limit(5),
+    QRCode.toDataURL(publicUrl, { width: 200, margin: 1 }),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col items-center gap-8 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
