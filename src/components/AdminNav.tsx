@@ -4,7 +4,7 @@ import { logoutAdmin } from "@/app/admin/login/actions";
 export function AdminNav() {
   return (
     <div className="flex w-full max-w-2xl items-center justify-between">
-      <Link href="/admin" className="text-xl font-semibold">
+      <Link href="/admin" className="text-xl font-bold tracking-tight">
         Administration
       </Link>
       <form action={logoutAdmin}>

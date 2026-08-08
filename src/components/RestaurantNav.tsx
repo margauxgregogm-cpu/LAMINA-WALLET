@@ -18,7 +18,7 @@ export function RestaurantNav({
           <img src={logoUrl} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
         )}
         <div>
-          <h1 className="text-xl font-semibold">{restaurantName}</h1>
+          <h1 className="text-xl font-bold tracking-tight">{restaurantName}</h1>
           <nav className="mt-1 flex gap-4 text-sm">
             <Link
               href="/restaurant"

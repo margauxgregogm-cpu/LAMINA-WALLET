@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { AdminNav } from "@/components/AdminNav";
+import { primaryPillLinkClass } from "@/components/FormField";
 import { LiveAdminUpdates } from "./LiveAdminUpdates";
 
 const NO_CATEGORY = "Sans catégorie";
@@ -61,11 +62,8 @@ export default async function AdminHomePage({
 
       <div className="w-full max-w-2xl">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Entreprises</h2>
-          <Link
-            href="/admin/restaurants/new"
-            className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-zinc-900"
-          >
+          <h2 className="text-lg font-bold tracking-tight">Entreprises</h2>
+          <Link href="/admin/restaurants/new" className={primaryPillLinkClass}>
             + Nouvelle entreprise
           </Link>
         </div>

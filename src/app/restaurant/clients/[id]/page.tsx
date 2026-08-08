@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getAuthenticatedRestaurant } from "@/lib/restaurant-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { LoyaltyCard } from "@/components/LoyaltyCard";
-import { FormField, formInputClass } from "@/components/FormField";
+import { FormField, formInputClass, primaryButtonClass } from "@/components/FormField";
 import { SubmitButton } from "@/components/SubmitButton";
 import { formatRelativeDate } from "@/lib/format-relative-date";
 import { computeVisitFrequency } from "@/lib/visit-frequency";
@@ -158,7 +158,7 @@ export default async function ClientDetailPage({
 
           <SubmitButton
             pendingChildren="Enregistrement..."
-            className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className={primaryButtonClass}
           >
             Enregistrer
           </SubmitButton>

@@ -1,5 +1,6 @@
 import { loginAdmin } from "./actions";
 import { SubmitButton } from "@/components/SubmitButton";
+import { primaryButtonClass } from "@/components/FormField";
 
 export default async function AdminLoginPage({
   searchParams,
@@ -11,7 +12,7 @@ export default async function AdminLoginPage({
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-zinc-50 px-4 dark:bg-zinc-950">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold">Administration</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Administration</h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
           Gérez les restaurants et leurs cartes de fidélité.
         </p>
@@ -52,7 +53,7 @@ export default async function AdminLoginPage({
 
         <SubmitButton
           pendingChildren="Connexion..."
-          className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+          className={primaryButtonClass}
         >
           Se connecter
         </SubmitButton>

@@ -4,7 +4,7 @@ import QRCode from "qrcode";
 import { isAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { AdminNav } from "@/components/AdminNav";
-import { FormField, formInputClass } from "@/components/FormField";
+import { FormField, formInputClass, primaryButtonClass } from "@/components/FormField";
 import { ColorSwatchPicker } from "@/components/ColorSwatchPicker";
 import { SubmitButton } from "@/components/SubmitButton";
 import { BUSINESS_CATEGORIES } from "@/lib/business-categories";
@@ -42,7 +42,7 @@ export default async function EditRestaurantPage({
       <AdminNav />
 
       <div className="w-full max-w-lg">
-        <h1 className="mb-4 text-xl font-semibold">{restaurant.name}</h1>
+        <h1 className="mb-4 text-xl font-bold tracking-tight">{restaurant.name}</h1>
 
         {saved && (
           <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
@@ -185,7 +185,7 @@ export default async function EditRestaurantPage({
 
           <SubmitButton
             pendingChildren="Enregistrement..."
-            className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className={primaryButtonClass}
           >
             Enregistrer
           </SubmitButton>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { primaryButtonClass } from "@/components/FormField";
 import { signupClient } from "./actions";
 
 export function SignupForm({
@@ -72,7 +73,7 @@ export function SignupForm({
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+        className={primaryButtonClass}
       >
         {isPending ? "Création de votre carte..." : "Recevoir ma carte"}
       </button>

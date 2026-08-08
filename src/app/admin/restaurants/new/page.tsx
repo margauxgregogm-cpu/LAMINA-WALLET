@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin-auth";
 import { AdminNav } from "@/components/AdminNav";
-import { FormField, formInputClass } from "@/components/FormField";
+import { FormField, formInputClass, primaryButtonClass } from "@/components/FormField";
 import { ColorSwatchPicker } from "@/components/ColorSwatchPicker";
 import { SubmitButton } from "@/components/SubmitButton";
 import { BUSINESS_CATEGORIES } from "@/lib/business-categories";
@@ -21,7 +21,7 @@ export default async function NewRestaurantPage({
       <AdminNav />
 
       <div className="w-full max-w-lg">
-        <h1 className="mb-4 text-xl font-semibold">Nouvelle entreprise</h1>
+        <h1 className="mb-4 text-xl font-bold tracking-tight">Nouvelle entreprise</h1>
 
         {error && (
           <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
@@ -116,7 +116,7 @@ export default async function NewRestaurantPage({
 
           <SubmitButton
             pendingChildren="Création..."
-            className="w-full rounded-full bg-zinc-900 px-5 py-3 font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className={primaryButtonClass}
           >
             Créer le restaurant
           </SubmitButton>
