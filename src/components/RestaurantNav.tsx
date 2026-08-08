@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { logoutRestaurant } from "@/app/restaurant/login/actions";
+import { HelpButton } from "@/components/HelpButton";
 
 export function RestaurantNav({
   restaurantName,
@@ -43,11 +44,14 @@ export function RestaurantNav({
           </nav>
         </div>
       </div>
-      <form action={logoutRestaurant}>
-        <button className="text-sm text-zinc-500 underline hover:text-zinc-700 dark:hover:text-zinc-300">
-          Déconnexion
-        </button>
-      </form>
+      <div className="flex items-center gap-4">
+        <HelpButton />
+        <form action={logoutRestaurant}>
+          <button className="text-sm text-zinc-500 underline hover:text-zinc-700 dark:hover:text-zinc-300">
+            Déconnexion
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
