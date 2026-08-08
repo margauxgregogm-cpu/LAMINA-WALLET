@@ -40,7 +40,7 @@ export function SearchClients() {
   }
 
   return (
-    <div className="w-full max-w-2xl">
+    <div className="w-full max-w-5xl">
       <form
         onSubmit={(e) => {
           e.preventDefault();

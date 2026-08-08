@@ -14,6 +14,20 @@ export async function signupClient(formData: FormData) {
     throw new Error("Missing required fields");
   }
 
+  // The client is signing up in person at the restaurant, so this first
+  // visit is real -- grant the first stamp immediately instead of making
+  // the restaurant scan them again right after they just filled the form.
+  const { data: restaurant } = await supabaseAdmin
+    .from("restaurants")
+    .select("stamps_required")
+    .eq("id", restaurantId)
+    .single();
+
+  const stampsRequired = restaurant?.stamps_required ?? 8;
+  const rewardEarned = 1 >= stampsRequired;
+  const initialStamps = rewardEarned ? 0 : 1;
+  const now = new Date().toISOString();
+
   const { data, error } = await supabaseAdmin
     .from("clients")
     .insert({
@@ -22,6 +36,9 @@ export async function signupClient(formData: FormData) {
       last_name: lastName,
       email,
       phone: phone || null,
+      stamps: initialStamps,
+      total_visits: 1,
+      last_visit_at: now,
     })
     .select("id")
     .single();
@@ -38,6 +55,11 @@ export async function signupClient(formData: FormData) {
     }
     throw new Error(error.message);
   }
+
+  await supabaseAdmin.from("visits").insert({
+    client_id: data.id,
+    restaurant_id: restaurantId,
+  });
 
   redirect(`/signup/success?id=${data.id}`);
 }

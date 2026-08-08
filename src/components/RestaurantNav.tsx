@@ -11,7 +11,7 @@ export function RestaurantNav({
   active: "dashboard" | "scan";
 }) {
   return (
-    <div className="flex w-full max-w-2xl items-center justify-between">
+    <div className="flex w-full max-w-5xl items-center justify-between">
       <div className="flex items-center gap-3">
         {logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element

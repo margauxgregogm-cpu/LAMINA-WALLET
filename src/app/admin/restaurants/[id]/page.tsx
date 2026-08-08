@@ -41,7 +41,7 @@ export default async function EditRestaurantPage({
     <div className="flex flex-1 flex-col items-center gap-6 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
       <AdminNav />
 
-      <div className="w-full max-w-lg">
+      <div className="w-full max-w-3xl">
         <h1 className="mb-4 text-xl font-bold tracking-tight">{restaurant.name}</h1>
 
         {saved && (
@@ -71,122 +71,134 @@ export default async function EditRestaurantPage({
           </a>
         </div>
 
-        <form action={updateRestaurant} className="space-y-4" encType="multipart/form-data">
+        <form action={updateRestaurant} encType="multipart/form-data">
           <input type="hidden" name="id" value={restaurant.id} />
 
-          <FormField label="Nom de l'entreprise">
-            <input name="name" defaultValue={restaurant.name} required className={formInputClass} />
-          </FormField>
+          <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
+            <div className="space-y-4">
+              <h2 className="text-sm font-semibold text-zinc-500">Champs obligatoires</h2>
 
-          <FormField label="Catégorie">
-            <select name="category" defaultValue={restaurant.category ?? ""} className={formInputClass}>
-              <option value="">Choisir une catégorie...</option>
-              {BUSINESS_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </FormField>
+              <FormField label="Nom de l'entreprise">
+                <input name="name" defaultValue={restaurant.name} required className={formInputClass} />
+              </FormField>
 
-          <FormField label="Lien public (slug)">
-            <input
-              name="slug"
-              defaultValue={restaurant.slug}
-              required
-              pattern="[a-z0-9-]+"
-              className={formInputClass}
-            />
-          </FormField>
+              <FormField label="Lien public (slug)">
+                <input
+                  name="slug"
+                  defaultValue={restaurant.slug}
+                  required
+                  pattern="[a-z0-9-]+"
+                  className={formInputClass}
+                />
+              </FormField>
 
-          <FormField
-            label="Couleur du fond de la carte"
-            hint="utilisée si aucune image de fond n'est active"
-          >
-            <ColorSwatchPicker name="backgroundColor" defaultValue={restaurant.background_color} />
-          </FormField>
+              <FormField label="Nombre de passages pour la récompense">
+                <input
+                  name="stampsRequired"
+                  type="number"
+                  min={1}
+                  defaultValue={restaurant.stamps_required}
+                  required
+                  className={formInputClass}
+                />
+              </FormField>
 
-          <FormField label="Nombre de passages pour la récompense">
-            <input
-              name="stampsRequired"
-              type="number"
-              min={1}
-              defaultValue={restaurant.stamps_required}
-              required
-              className={formInputClass}
-            />
-          </FormField>
-
-          <FormField label="Texte de la récompense">
-            <input name="rewardText" defaultValue={restaurant.reward_text} required className={formInputClass} />
-          </FormField>
-
-          <FormField label="Offre de bienvenue (optionnel)">
-            <input
-              name="welcomeOfferText"
-              defaultValue={restaurant.welcome_offer_text ?? ""}
-              className={formInputClass}
-            />
-          </FormField>
-
-          <FormField label="Adresse (optionnel)">
-            <input name="address" defaultValue={restaurant.address ?? ""} className={formInputClass} />
-          </FormField>
-
-          {restaurant.logo_url && (
-            <div className="flex items-center gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={restaurant.logo_url}
-                alt="Logo actuel"
-                className="h-12 w-12 rounded-lg border border-zinc-200 object-cover dark:border-zinc-800"
-              />
-              <span className="text-sm text-zinc-500">Logo actuel</span>
+              <FormField label="Texte de la récompense">
+                <input
+                  name="rewardText"
+                  defaultValue={restaurant.reward_text}
+                  required
+                  className={formInputClass}
+                />
+              </FormField>
             </div>
-          )}
-          <FormField label="Remplacer le logo (optionnel)">
-            <input
-              name="logo"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              className={formInputClass}
-            />
-          </FormField>
 
-          {restaurant.background_image_url && (
-            <div className="flex items-center gap-3">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={restaurant.background_image_url}
-                alt="Image de fond actuelle"
-                className="h-12 w-20 rounded-lg border border-zinc-200 object-cover dark:border-zinc-800"
-              />
-              <label className="flex items-center gap-2 text-sm text-zinc-500">
-                <input type="checkbox" name="removeBackgroundImage" className="h-4 w-4" />
-                Supprimer l&apos;image de fond (revenir à la couleur)
-              </label>
+            <div className="space-y-4">
+              <h2 className="text-sm font-semibold text-zinc-500">Champs optionnels</h2>
+
+              <FormField label="Catégorie">
+                <select name="category" defaultValue={restaurant.category ?? ""} className={formInputClass}>
+                  <option value="">Choisir une catégorie...</option>
+                  {BUSINESS_CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+
+              <FormField
+                label="Couleur du fond de la carte"
+                hint="utilisée si aucune image de fond n'est active"
+              >
+                <ColorSwatchPicker name="backgroundColor" defaultValue={restaurant.background_color} />
+              </FormField>
+
+              <FormField label="Offre de bienvenue (optionnel)">
+                <input
+                  name="welcomeOfferText"
+                  defaultValue={restaurant.welcome_offer_text ?? ""}
+                  className={formInputClass}
+                />
+              </FormField>
+
+              <FormField label="Adresse (optionnel)">
+                <input name="address" defaultValue={restaurant.address ?? ""} className={formInputClass} />
+              </FormField>
+
+              {restaurant.logo_url && (
+                <div className="flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={restaurant.logo_url}
+                    alt="Logo actuel"
+                    className="h-12 w-12 rounded-lg border border-zinc-200 object-cover dark:border-zinc-800"
+                  />
+                  <span className="text-sm text-zinc-500">Logo actuel</span>
+                </div>
+              )}
+              <FormField label="Remplacer le logo (optionnel)">
+                <input
+                  name="logo"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className={formInputClass}
+                />
+              </FormField>
+
+              {restaurant.background_image_url && (
+                <div className="flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={restaurant.background_image_url}
+                    alt="Image de fond actuelle"
+                    className="h-12 w-20 rounded-lg border border-zinc-200 object-cover dark:border-zinc-800"
+                  />
+                  <label className="flex items-center gap-2 text-sm text-zinc-500">
+                    <input type="checkbox" name="removeBackgroundImage" className="h-4 w-4" />
+                    Supprimer l&apos;image de fond (revenir à la couleur)
+                  </label>
+                </div>
+              )}
+              <FormField
+                label={
+                  restaurant.background_image_url
+                    ? "Remplacer l'image de fond (optionnel)"
+                    : "Image de fond de la carte (optionnel)"
+                }
+                hint="si ajoutée, remplace la couleur choisie ci-dessus comme fond de la carte"
+              >
+                <input
+                  name="backgroundImage"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className={formInputClass}
+                />
+              </FormField>
             </div>
-          )}
-          <FormField
-            label={
-              restaurant.background_image_url
-                ? "Remplacer l'image de fond (optionnel)"
-                : "Image de fond de la carte (optionnel)"
-            }
-            hint="si ajoutée, remplace la couleur choisie ci-dessus comme fond de la carte"
-          >
-            <input
-              name="backgroundImage"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              className={formInputClass}
-            />
-          </FormField>
+          </div>
 
-          <SubmitButton
-            pendingChildren="Enregistrement..."
-            className={primaryButtonClass}
-          >
+          <SubmitButton pendingChildren="Enregistrement..." className={`${primaryButtonClass} mt-6`}>
             Enregistrer
           </SubmitButton>
         </form>

@@ -26,3 +26,12 @@ export function formatRelativeDate(iso: string | null): string {
   if (diffDays > 1) return `Il y a ${diffDays} jours`;
   return date.toLocaleDateString("fr-FR");
 }
+
+export function formatTime(iso: string | null): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleTimeString("fr-FR", {
+    timeZone: "Europe/Paris",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
