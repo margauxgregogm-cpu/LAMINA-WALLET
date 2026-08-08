@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
+import { AutoUpdate } from "@/components/AutoUpdate";
 
 export const metadata: Metadata = {
   title: "Lamina Fidelity — Entreprise",
@@ -18,6 +19,7 @@ export default function RestaurantLayout({ children }: { children: React.ReactNo
   return (
     <>
       <RegisterServiceWorker />
+      <AutoUpdate />
       {children}
     </>
   );

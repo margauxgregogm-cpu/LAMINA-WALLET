@@ -19,10 +19,16 @@ export default async function AdminHomePage({
 
   const { data: allRestaurants } = await supabaseAdmin
     .from("restaurants")
-    .select("id, name, slug, stamps_required, category")
+    .select("id, name, slug, stamps_required, category, user_id, logo_url")
     .order("name", { ascending: true });
 
   const { data: allClients } = await supabaseAdmin.from("clients").select("restaurant_id");
+
+  // The login email lives in Supabase Auth (restaurants.user_id -> auth
+  // user), not on the restaurants table itself -- one listUsers() call and
+  // a lookup map avoids an N+1 admin.getUserById() per restaurant.
+  const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
+  const emailByUserId = new Map(userList?.users.map((u) => [u.id, u.email]) ?? []);
 
   const clientCountByRestaurant = new Map<string, number>();
   for (const client of allClients ?? []) {
@@ -108,9 +114,26 @@ export default async function AdminHomePage({
                     href={`/admin/restaurants/${r.id}`}
                     className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
                   >
-                    <div>
-                      <div className="font-medium">{r.name}</div>
-                      <div className="text-sm text-zinc-500">/signup?r={r.slug}</div>
+                    <div className="flex items-center gap-3">
+                      {r.logo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={r.logo_url}
+                          alt=""
+                          className="h-10 w-10 shrink-0 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-xs font-medium text-zinc-400 dark:bg-zinc-800">
+                          {r.name.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-medium">{r.name}</div>
+                        <div className="text-sm text-zinc-500">/signup?r={r.slug}</div>
+                        {r.user_id && emailByUserId.get(r.user_id) && (
+                          <div className="text-sm text-zinc-500">{emailByUserId.get(r.user_id)}</div>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right text-sm text-zinc-500">
                       <div>{clientCountByRestaurant.get(r.id) ?? 0} personne(s)</div>

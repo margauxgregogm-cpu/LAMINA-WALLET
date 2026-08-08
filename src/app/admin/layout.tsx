@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { RegisterServiceWorker } from "@/components/RegisterServiceWorker";
+import { AutoUpdate } from "@/components/AutoUpdate";
 
 export const metadata: Metadata = {
   title: "Lamina Fidelity — Admin",
@@ -18,6 +19,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <>
       <RegisterServiceWorker />
+      <AutoUpdate />
       {children}
     </>
   );

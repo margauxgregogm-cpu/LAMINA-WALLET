@@ -31,6 +31,12 @@ export default async function EditRestaurantPage({
 
   if (!restaurant) notFound();
 
+  let loginEmail: string | null = null;
+  if (restaurant.user_id) {
+    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(restaurant.user_id);
+    loginEmail = authUser?.user?.email ?? null;
+  }
+
   const headersList = await headers();
   const host = headersList.get("host");
   const protocol = host?.startsWith("localhost") ? "http" : "https";
@@ -42,7 +48,8 @@ export default async function EditRestaurantPage({
       <AdminNav />
 
       <div className="w-full max-w-3xl">
-        <h1 className="mb-4 text-xl font-bold tracking-tight">{restaurant.name}</h1>
+        <h1 className="text-xl font-bold tracking-tight">{restaurant.name}</h1>
+        <p className="mb-4 text-sm text-zinc-500">{loginEmail ?? " "}</p>
 
         {saved && (
           <p className="mb-4 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">

@@ -3,6 +3,7 @@ import QRCode from "qrcode";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { LoyaltyCard } from "@/components/LoyaltyCard";
 import { buildGoogleWalletSaveUrl, isGoogleWalletConfigured } from "@/lib/google-wallet";
+import { isAppleWalletConfigured } from "@/lib/apple-wallet";
 
 export default async function SignupSuccessPage({
   searchParams,
@@ -48,6 +49,8 @@ export default async function SignupSuccessPage({
       })
     : null;
 
+  const appleWalletUrl = isAppleWalletConfigured() ? `/api/apple-wallet/${client.id}` : null;
+
   return (
     <div className="flex flex-1 flex-col items-center gap-8 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
       <div className="text-center">
@@ -76,13 +79,22 @@ export default async function SignupSuccessPage({
       </div>
 
       <div className="flex w-full max-w-sm flex-col gap-3 sm:flex-row">
-        <button
-          disabled
-          className="flex-1 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-medium text-white opacity-50 dark:bg-white dark:text-zinc-900"
-          title="Bientôt disponible"
-        >
-          Ajouter à Apple Wallet
-        </button>
+        {appleWalletUrl ? (
+          <a
+            href={appleWalletUrl}
+            className="flex-1 rounded-xl bg-zinc-900 px-4 py-3 text-center text-sm font-medium text-white dark:bg-white dark:text-zinc-900"
+          >
+            Ajouter à Apple Wallet
+          </a>
+        ) : (
+          <button
+            disabled
+            className="flex-1 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-medium text-white opacity-50 dark:bg-white dark:text-zinc-900"
+            title="Bientôt disponible"
+          >
+            Ajouter à Apple Wallet
+          </button>
+        )}
         {googleWalletUrl ? (
           <a
             href={googleWalletUrl}
