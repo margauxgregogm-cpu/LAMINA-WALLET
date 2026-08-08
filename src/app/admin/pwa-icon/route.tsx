@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "white",
+          background: "#09090b",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
