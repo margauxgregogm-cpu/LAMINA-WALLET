@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { after } from "next/server";
+import sharp from "sharp";
 import { requireAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { updateGoogleWalletClassDesign, updateGoogleWalletRewardTextForRestaurant } from "@/lib/google-wallet";
@@ -21,6 +22,43 @@ function slugify(input: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+// Uploaded logos/backgrounds are raw phone-camera photos (often several MB,
+// several thousand pixels wide) with nothing downstream ever needing that
+// much resolution -- the Apple Wallet strip is drawn at 1125px wide, the
+// biggest on-screen use is a full-bleed card background. Downscaling and
+// re-encoding keeps them visually indistinguishable at every size they're
+// actually displayed at while cutting the file (and therefore the .pkpass
+// that embeds it) down drastically. PNG only when the source has an alpha
+// channel (most logos) since that's the only reason to pay PNG's much
+// larger size over JPEG.
+async function compressImage(
+  buffer: Buffer,
+  maxDimension: number
+): Promise<{ buffer: Buffer; contentType: string; ext: string }> {
+  const image = sharp(buffer);
+  const metadata = await image.metadata();
+  const resized = image.resize({
+    width: maxDimension,
+    height: maxDimension,
+    fit: "inside",
+    withoutEnlargement: true,
+  });
+
+  if (metadata.hasAlpha) {
+    return {
+      buffer: await resized.png({ quality: 85, compressionLevel: 9 }).toBuffer(),
+      contentType: "image/png",
+      ext: "png",
+    };
+  }
+
+  return {
+    buffer: await resized.jpeg({ quality: 85, mozjpeg: true }).toBuffer(),
+    contentType: "image/jpeg",
+    ext: "jpg",
+  };
+}
+
 // Returns { url: null, error } instead of throwing on failure — a rejected
 // upload (oversized file, wrong format, etc.) should not block creating or
 // saving the rest of the restaurant's info, which previously discarded
@@ -28,17 +66,28 @@ function slugify(input: string): string {
 async function uploadImageIfProvided(
   formData: FormData,
   fieldName: string,
-  pathPrefix: string
+  pathPrefix: string,
+  maxDimension: number
 ): Promise<{ url: string | null; error: string | null }> {
   const file = formData.get(fieldName);
   if (!(file instanceof File) || file.size === 0) return { url: null, error: null };
 
-  const ext = file.name.split(".").pop() || "png";
-  const path = `${pathPrefix}-${Date.now()}.${ext}`;
+  let toUpload: { buffer: Buffer; contentType: string; ext: string };
+  try {
+    const original = Buffer.from(await file.arrayBuffer());
+    toUpload = await compressImage(original, maxDimension);
+  } catch {
+    // Not an image sharp can decode, or some other processing failure --
+    // fall back to uploading the original rather than losing the file.
+    const ext = file.name.split(".").pop() || "png";
+    toUpload = { buffer: Buffer.from(await file.arrayBuffer()), contentType: file.type, ext };
+  }
+
+  const path = `${pathPrefix}-${Date.now()}.${toUpload.ext}`;
 
   const { error } = await supabaseAdmin.storage
     .from("restaurant-logos")
-    .upload(path, file, { contentType: file.type, upsert: true });
+    .upload(path, toUpload.buffer, { contentType: toUpload.contentType, upsert: true });
 
   if (error) return { url: null, error: error.message };
 
@@ -66,8 +115,8 @@ export async function createRestaurant(formData: FormData) {
     );
   }
 
-  const logoResult = await uploadImageIfProvided(formData, "logo", `${slug}-logo`);
-  const backgroundResult = await uploadImageIfProvided(formData, "backgroundImage", `${slug}-bg`);
+  const logoResult = await uploadImageIfProvided(formData, "logo", `${slug}-logo`, 800);
+  const backgroundResult = await uploadImageIfProvided(formData, "backgroundImage", `${slug}-bg`, 1600);
   const logoUrl = logoResult.url;
   const backgroundImageUrl = backgroundResult.url;
   // A failed image upload (too large, wrong format, etc.) shouldn't discard
@@ -142,8 +191,8 @@ export async function updateRestaurant(formData: FormData) {
     );
   }
 
-  const logoResult = await uploadImageIfProvided(formData, "logo", `${slug}-logo`);
-  const backgroundResult = await uploadImageIfProvided(formData, "backgroundImage", `${slug}-bg`);
+  const logoResult = await uploadImageIfProvided(formData, "logo", `${slug}-logo`, 800);
+  const backgroundResult = await uploadImageIfProvided(formData, "backgroundImage", `${slug}-bg`, 1600);
   const logoUrl = logoResult.url;
   const backgroundImageUrl = backgroundResult.url;
   const uploadWarnings = [logoResult.error, backgroundResult.error].filter(
