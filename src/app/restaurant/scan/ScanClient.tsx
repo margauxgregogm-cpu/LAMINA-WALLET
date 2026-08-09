@@ -6,6 +6,7 @@ import { QrScanner } from "@/components/QrScanner";
 import { LoyaltyCard } from "@/components/LoyaltyCard";
 import { recordVisit } from "./actions";
 import { searchClients } from "../actions";
+import { enqueueScan, getQueue, removeFromQueue } from "@/lib/offline-scan-queue";
 
 type Client = {
   id: string;
@@ -46,9 +47,13 @@ export function ScanClient({
   const [searched, setSearched] = useState(false);
   const [addingVisitId, setAddingVisitId] = useState<string | null>(null);
   const [overlayResult, setOverlayResult] = useState<VisitResult | null>(null);
+  const [offlineQueued, setOfflineQueued] = useState(false);
+  const [pendingCount, setPendingCount] = useState(() => getQueue().length);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [lastClient, setLastClient] = useState<{ id: string; name: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const isFlushingRef = useRef(false);
 
   // The camera keeps decoding while the client's QR code is still in frame,
   // so dismissing the result overlay (which resumes the scanner) can
@@ -73,6 +78,44 @@ export function ScanClient({
     return () => clearTimeout(timeout);
   }, [overlayResult]);
 
+  useEffect(() => {
+    if (!offlineQueued) return;
+    const timeout = setTimeout(() => setOfflineQueued(false), OVERLAY_AUTO_DISMISS_MS);
+    return () => clearTimeout(timeout);
+  }, [offlineQueued]);
+
+  // Sends queued scans to the server in the order they were recorded.
+  // Stops at the first failure -- if that one didn't make it, connectivity
+  // is still down, and trying the rest would just fail the same way. The
+  // server's own once-per-day cap (recordVisit) is what protects against a
+  // client getting double-stamped if they're also scanned normally on
+  // another device before this queue drains.
+  async function flushQueue() {
+    if (isFlushingRef.current) return;
+    isFlushingRef.current = true;
+    setIsSyncing(true);
+    try {
+      for (const entry of getQueue()) {
+        try {
+          await recordVisit(entry.clientId);
+          removeFromQueue(entry.id);
+          setPendingCount(getQueue().length);
+        } catch {
+          break;
+        }
+      }
+    } finally {
+      setIsSyncing(false);
+      isFlushingRef.current = false;
+    }
+  }
+
+  useEffect(() => {
+    if (navigator.onLine) flushQueue();
+    window.addEventListener("online", flushQueue);
+    return () => window.removeEventListener("online", flushQueue);
+  }, []);
+
   function runScan(clientId: string) {
     const trimmed = clientId.trim();
     const now = Date.now();
@@ -86,7 +129,18 @@ export function ScanClient({
     setResults([]);
     setSearched(false);
     startTransition(async () => {
-      const result = await recordVisit(trimmed);
+      let result;
+      try {
+        result = await recordVisit(trimmed);
+      } catch {
+        // The request itself never reached the server (offline, dead zone)
+        // -- queue it instead of showing an error, so staff can keep
+        // scanning without waiting for wifi to come back.
+        enqueueScan(trimmed);
+        setPendingCount(getQueue().length);
+        setOfflineQueued(true);
+        return;
+      }
       if ("error" in result) {
         setError(result.error ?? "Erreur inconnue");
         return;
@@ -121,7 +175,25 @@ export function ScanClient({
 
   return (
     <div className="flex w-full max-w-sm flex-col gap-6">
-      <QrScanner onScan={runScan} paused={!!overlayResult} />
+      <QrScanner onScan={runScan} paused={!!overlayResult || offlineQueued} />
+
+      {pendingCount > 0 && (
+        <div className="flex items-center justify-between gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+          <span>
+            {isSyncing
+              ? "Synchronisation en cours..."
+              : `${pendingCount} visite(s) en attente de synchronisation`}
+          </span>
+          {!isSyncing && (
+            <button
+              onClick={flushQueue}
+              className="shrink-0 font-medium underline underline-offset-2"
+            >
+              Réessayer
+            </button>
+          )}
+        </div>
+      )}
 
       <form
         onSubmit={(e) => {
@@ -241,6 +313,28 @@ export function ScanClient({
             />
 
             <p className="text-sm text-white/80">Cliquez n&apos;importe où pour continuer</p>
+          </div>
+        </div>
+      )}
+
+      {offlineQueued && (
+        <div
+          onClick={() => setOfflineQueued(false)}
+          className="fixed inset-0 z-50 flex cursor-pointer flex-col items-center justify-center gap-6 bg-black/70 px-4 py-8"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-sm rounded-2xl border border-amber-300 bg-amber-50 px-4 py-4 text-center dark:border-amber-800 dark:bg-amber-950"
+          >
+            <div className="font-semibold text-amber-800 dark:text-amber-200">
+              📡 Pas de connexion
+            </div>
+            <div className="mt-1 text-sm text-amber-700 dark:text-amber-300">
+              La visite a été enregistrée hors-ligne. Le tampon sera ajouté dès que la connexion reviendra.
+            </div>
+            <p className="mt-3 text-sm text-amber-700/70 dark:text-amber-300/70">
+              Cliquez n&apos;importe où pour continuer
+            </p>
           </div>
         </div>
       )}
