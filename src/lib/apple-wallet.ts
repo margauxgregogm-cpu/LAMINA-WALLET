@@ -114,8 +114,12 @@ export async function buildAppleWalletPass({
 
   pass.type = "storeCard";
   pass.headerFields.push({ key: "stamps", label: "TAMPONS", value: `${stamps} / ${stampsRequired}` });
-  pass.primaryFields.push({ key: "member", label: "MEMBRE", value: clientName });
+  // Deliberately no primaryFields: on storeCard that slot renders right on
+  // top of the strip image, which is exactly where the member name isn't
+  // wanted. Keeping it in secondary/auxiliary puts it in the plain text
+  // block below the image instead.
   pass.secondaryFields.push({ key: "reward", label: "RÉCOMPENSE", value: rewardText });
+  pass.auxiliaryFields.push({ key: "member", label: "MEMBRE", value: clientName });
   pass.setBarcodes(clientId);
 
   return pass.getAsBuffer();
