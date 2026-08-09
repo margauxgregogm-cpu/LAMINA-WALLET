@@ -90,12 +90,15 @@ export async function buildAppleWalletPass({
     buffers["strip@2x.png"] = stripBuffer;
   }
 
+  // PEM values are stored as single-line env vars with literal "\n"
+  // sequences (same convention as GOOGLE_WALLET_PRIVATE_KEY) since actual
+  // newlines are awkward to pass through the Vercel CLI / dashboard.
   const pass = new PKPass(
     buffers,
     {
-      wwdr: process.env.APPLE_WALLET_WWDR_CERT!,
-      signerCert: process.env.APPLE_WALLET_SIGNER_CERT!,
-      signerKey: process.env.APPLE_WALLET_SIGNER_KEY!,
+      wwdr: process.env.APPLE_WALLET_WWDR_CERT!.replace(/\\n/g, "\n"),
+      signerCert: process.env.APPLE_WALLET_SIGNER_CERT!.replace(/\\n/g, "\n"),
+      signerKey: process.env.APPLE_WALLET_SIGNER_KEY!.replace(/\\n/g, "\n"),
       signerKeyPassphrase: process.env.APPLE_WALLET_SIGNER_KEY_PASSPHRASE || undefined,
     },
     {
