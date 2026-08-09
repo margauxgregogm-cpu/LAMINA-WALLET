@@ -38,13 +38,12 @@ label:has(input[type="radio"]) {
 }
 
 /* iOS Safari auto-zooms the page when a focused text input's font-size is
-   under 16px — most inputs here use Tailwind's text-sm (14px). Locking
-   every input/textarea/select to 16px on mobile viewports stops that zoom
-   without touching each component's classes individually. */
-@media (max-width: 767px) {
-  input,
-  textarea,
-  select {
-    font-size: 16px;
-  }
+   under 16px — most inputs here use Tailwind's text-sm (14px). Applied
+   unconditionally (not just under some breakpoint) so it also covers
+   tablets, whose widths vary too much to target reliably with a media
+   query — a slightly larger input on desktop is a harmless side effect. */
+input,
+textarea,
+select {
+  font-size: 16px;
 }
