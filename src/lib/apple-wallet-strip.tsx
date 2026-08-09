@@ -36,7 +36,7 @@ export async function renderStripImages({
   const rows: boolean[][] = [];
   for (let i = 0; i < stamps.length; i += perRow) rows.push(stamps.slice(i, i + perRow));
 
-  const circleSize = rows.length > 1 ? 64 : 76;
+  const circleSize = rows.length > 1 ? 128 : 152;
   const gap = 18;
 
   const image = new ImageResponse(
