@@ -1,5 +1,6 @@
 import "server-only";
 import jwt from "jsonwebtoken";
+import { supabaseAdmin } from "./supabase-admin";
 
 export function isGoogleWalletConfigured() {
   return Boolean(
@@ -263,4 +264,37 @@ export async function updateGoogleWalletClassDesign({
   } catch (err) {
     console.error("Google Wallet class update error:", err);
   }
+}
+
+// Reward text lives on each client's loyaltyObject (secondaryLoyaltyPoints),
+// not on the shared class, so a PATCH to the class alone -- see
+// updateGoogleWalletClassDesign -- never reaches it. When the admin changes
+// the reward text, every client of that restaurant needs their own object
+// patched, not just the one who happens to visit next.
+export async function updateGoogleWalletRewardTextForRestaurant(restaurantId: string) {
+  if (!isGoogleWalletConfigured()) return;
+
+  const { data: restaurant } = await supabaseAdmin
+    .from("restaurants")
+    .select("reward_text, stamps_required")
+    .eq("id", restaurantId)
+    .single();
+  if (!restaurant) return;
+
+  const { data: clients } = await supabaseAdmin
+    .from("clients")
+    .select("id, stamps")
+    .eq("restaurant_id", restaurantId);
+  if (!clients || clients.length === 0) return;
+
+  await Promise.all(
+    clients.map((client) =>
+      updateGoogleWalletStamps({
+        clientId: client.id,
+        stamps: client.stamps,
+        stampsRequired: restaurant.stamps_required,
+        rewardText: restaurant.reward_text,
+      })
+    )
+  );
 }

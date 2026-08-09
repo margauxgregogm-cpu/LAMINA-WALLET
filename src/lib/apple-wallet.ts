@@ -1,5 +1,6 @@
 import "server-only";
 import { PKPass } from "passkit-generator";
+import sharp from "sharp";
 import { renderStripImages } from "./apple-wallet-strip";
 import { authTokenFor } from "./apple-wallet-auth";
 import { supabaseAdmin } from "./supabase-admin";
@@ -52,6 +53,24 @@ async function fetchImageBuffer(url: string): Promise<Buffer> {
   return Buffer.from(await res.arrayBuffer());
 }
 
+// Restaurant logo uploads are full-resolution photos, not pre-sized app
+// icons -- embedding them as-is (and reused for all 4 icon/logo slots) was
+// producing multi-megabyte .pkpass files, slow enough over cellular that
+// Safari looked like it was silently failing to open the Add-to-Wallet
+// screen. PassKit's actual on-screen sizes for these are tiny.
+async function fetchAndResizeIcon(url: string, size: number): Promise<Buffer> {
+  const raw = await fetchImageBuffer(url);
+  return sharp(raw).resize(size, size, { fit: "cover" }).png().toBuffer();
+}
+
+async function fetchAndResizeLogo(url: string, height: number): Promise<Buffer> {
+  const raw = await fetchImageBuffer(url);
+  return sharp(raw)
+    .resize({ height, width: height * 3, fit: "inside", withoutEnlargement: false })
+    .png()
+    .toBuffer();
+}
+
 const DEFAULT_LOGO_URL = "https://placehold.co/660x660/27272a/ffffff.png?text=LW";
 
 export async function buildAppleWalletPass({
@@ -81,8 +100,14 @@ export async function buildAppleWalletPass({
     throw new Error("Apple Wallet is not configured");
   }
 
-  const [iconBuffer, strip] = await Promise.all([
-    fetchImageBuffer(logoUrl || DEFAULT_LOGO_URL),
+  const source = logoUrl || DEFAULT_LOGO_URL;
+  const [icon1x, icon2x, icon3x, logo1x, logo2x, logo3x, strip] = await Promise.all([
+    fetchAndResizeIcon(source, 29),
+    fetchAndResizeIcon(source, 58),
+    fetchAndResizeIcon(source, 87),
+    fetchAndResizeLogo(source, 50),
+    fetchAndResizeLogo(source, 100),
+    fetchAndResizeLogo(source, 150),
     renderStripImages({
       backgroundColor,
       backgroundImageUrl,
@@ -92,10 +117,12 @@ export async function buildAppleWalletPass({
   ]);
 
   const buffers: Record<string, Buffer> = {
-    "icon.png": iconBuffer,
-    "icon@2x.png": iconBuffer,
-    "logo.png": iconBuffer,
-    "logo@2x.png": iconBuffer,
+    "icon.png": icon1x,
+    "icon@2x.png": icon2x,
+    "icon@3x.png": icon3x,
+    "logo.png": logo1x,
+    "logo@2x.png": logo2x,
+    "logo@3x.png": logo3x,
     "strip.png": strip.x1,
     "strip@2x.png": strip.x2,
     "strip@3x.png": strip.x3,

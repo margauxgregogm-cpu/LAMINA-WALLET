@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { updateGoogleWalletClassDesign } from "@/lib/google-wallet";
+import { updateGoogleWalletClassDesign, updateGoogleWalletRewardTextForRestaurant } from "@/lib/google-wallet";
 import { notifyApplePassUpdatesForRestaurant } from "@/lib/apple-wallet-push";
 
 // The client-side `pattern` attribute on the slug field is trivially
@@ -194,6 +194,10 @@ export async function updateRestaurant(formData: FormData) {
       })
     );
     after(() => notifyApplePassUpdatesForRestaurant(id));
+    // Reward text lives per-client on Google's side (see the function doc),
+    // so it needs its own pass over every client instead of the one PATCH
+    // updateGoogleWalletClassDesign sends for the shared class.
+    after(() => updateGoogleWalletRewardTextForRestaurant(id));
   }
 
   if (uploadWarnings.length > 0) {
