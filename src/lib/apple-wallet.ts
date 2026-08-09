@@ -1,5 +1,6 @@
 import "server-only";
 import { PKPass } from "passkit-generator";
+import { renderStripImages } from "./apple-wallet-strip";
 
 // Mirrors src/lib/google-wallet.ts's shape: an isConfigured() guard plus a
 // build function, so the UI can conditionally show the real button only
@@ -74,9 +75,14 @@ export async function buildAppleWalletPass({
     throw new Error("Apple Wallet is not configured");
   }
 
-  const [iconBuffer, stripBuffer] = await Promise.all([
+  const [iconBuffer, strip] = await Promise.all([
     fetchImageBuffer(logoUrl || DEFAULT_LOGO_URL),
-    backgroundImageUrl ? fetchImageBuffer(backgroundImageUrl) : Promise.resolve(null),
+    renderStripImages({
+      backgroundColor,
+      backgroundImageUrl,
+      stampsEarned: stamps,
+      stampsRequired,
+    }),
   ]);
 
   const buffers: Record<string, Buffer> = {
@@ -84,11 +90,10 @@ export async function buildAppleWalletPass({
     "icon@2x.png": iconBuffer,
     "logo.png": iconBuffer,
     "logo@2x.png": iconBuffer,
+    "strip.png": strip.x1,
+    "strip@2x.png": strip.x2,
+    "strip@3x.png": strip.x3,
   };
-  if (stripBuffer) {
-    buffers["strip.png"] = stripBuffer;
-    buffers["strip@2x.png"] = stripBuffer;
-  }
 
   // PEM values are stored as single-line env vars with literal "\n"
   // sequences (same convention as GOOGLE_WALLET_PRIVATE_KEY) since actual
