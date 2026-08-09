@@ -1,6 +1,12 @@
 import "server-only";
 import { PKPass } from "passkit-generator";
 import { renderStripImages } from "./apple-wallet-strip";
+import { authTokenFor } from "./apple-wallet-auth";
+import { supabaseAdmin } from "./supabase-admin";
+
+// Fixed production origin -- Apple's push service can't reach a local dev
+// server anyway, so there's no need for this to vary by environment.
+const SITE_URL = "https://lamina-wallet.vercel.app";
 
 // Mirrors src/lib/google-wallet.ts's shape: an isConfigured() guard plus a
 // build function, so the UI can conditionally show the real button only
@@ -95,6 +101,8 @@ export async function buildAppleWalletPass({
     "strip@3x.png": strip.x3,
   };
 
+  const serialNumber = `${restaurantId}-${clientId}`;
+
   // PEM values are stored as single-line env vars with literal "\n"
   // sequences (same convention as GOOGLE_WALLET_PRIVATE_KEY) since actual
   // newlines are awkward to pass through the Vercel CLI / dashboard.
@@ -111,9 +119,13 @@ export async function buildAppleWalletPass({
       passTypeIdentifier: process.env.APPLE_WALLET_PASS_TYPE_IDENTIFIER!,
       teamIdentifier: process.env.APPLE_WALLET_TEAM_IDENTIFIER!,
       organizationName: "Lamina Fidelity",
-      serialNumber: `${restaurantId}-${clientId}`,
+      serialNumber,
       description: `Carte de fidélité ${restaurantName}`,
       backgroundColor: hexToRgb(backgroundColor),
+      // Lets iOS register this pass for push updates -- see
+      // apple-wallet-push.ts and the /api/apple-wallet/v1/* routes.
+      webServiceURL: `${SITE_URL}/api/apple-wallet/v1`,
+      authenticationToken: authTokenFor(serialNumber),
     }
   );
 
@@ -128,4 +140,41 @@ export async function buildAppleWalletPass({
   pass.setBarcodes(clientId);
 
   return pass.getAsBuffer();
+}
+
+// Shared by the initial "add to wallet" download route and the PassKit
+// web-service "fetch latest pass" route -- both just need a client id.
+export async function buildAppleWalletPassForClient(clientId: string): Promise<
+  { pass: Buffer; restaurantName: string } | { error: "client_not_found" | "restaurant_not_found" }
+> {
+  const { data: client } = await supabaseAdmin
+    .from("clients")
+    .select("id, first_name, stamps, restaurant_id")
+    .eq("id", clientId)
+    .single();
+
+  if (!client) return { error: "client_not_found" };
+
+  const { data: restaurant } = await supabaseAdmin
+    .from("restaurants")
+    .select("name, background_color, background_image_url, stamps_required, reward_text, logo_url")
+    .eq("id", client.restaurant_id)
+    .single();
+
+  if (!restaurant) return { error: "restaurant_not_found" };
+
+  const pass = await buildAppleWalletPass({
+    restaurantId: client.restaurant_id,
+    restaurantName: restaurant.name,
+    backgroundColor: restaurant.background_color,
+    backgroundImageUrl: restaurant.background_image_url,
+    stampsRequired: restaurant.stamps_required,
+    rewardText: restaurant.reward_text,
+    clientId: client.id,
+    clientName: client.first_name,
+    stamps: client.stamps,
+    logoUrl: restaurant.logo_url,
+  });
+
+  return { pass, restaurantName: restaurant.name };
 }

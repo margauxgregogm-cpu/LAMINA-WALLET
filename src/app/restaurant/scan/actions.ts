@@ -3,6 +3,7 @@
 import { after } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { updateGoogleWalletStamps } from "@/lib/google-wallet";
+import { notifyApplePassUpdate } from "@/lib/apple-wallet-push";
 import { requireAuthenticatedRestaurant } from "@/lib/restaurant-auth";
 
 // Vercel's serverless functions run in UTC, so comparing calendar days with
@@ -68,9 +69,9 @@ export async function recordVisit(clientId: string) {
     restaurant_id: restaurant.id,
   });
 
-  // Don't block the response on Google's API — this is a best-effort sync
-  // (see updateGoogleWalletStamps) and the two external round-trips it makes
-  // were the main source of perceived click lag on the scan action.
+  // Don't block the response on Google's/Apple's APIs — these are
+  // best-effort syncs and the external round-trips they make were the main
+  // source of perceived click lag on the scan action.
   after(() =>
     updateGoogleWalletStamps({
       clientId,
@@ -79,6 +80,7 @@ export async function recordVisit(clientId: string) {
       rewardText: restaurant.reward_text,
     })
   );
+  after(() => notifyApplePassUpdate({ restaurantId: restaurant.id, clientId }));
 
   return {
     alreadyVisitedToday: false as const,

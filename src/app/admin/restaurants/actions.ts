@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { requireAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { updateGoogleWalletClassDesign } from "@/lib/google-wallet";
+import { notifyApplePassUpdatesForRestaurant } from "@/lib/apple-wallet-push";
 
 // The client-side `pattern` attribute on the slug field is trivially
 // bypassed (JS-driven form fills, browsers that don't enforce it), so the
@@ -158,6 +159,9 @@ export async function updateRestaurant(formData: FormData) {
     reward_text: rewardText,
     welcome_offer_text: welcomeOfferText || null,
     address: address || null,
+    // Lets the Apple Wallet push-update endpoint tell which already-saved
+    // passes need refreshing (see apple-wallet-push.ts).
+    updated_at: new Date().toISOString(),
   };
   if (logoUrl) update.logo_url = logoUrl;
   if (backgroundImageUrl) {
@@ -177,8 +181,8 @@ export async function updateRestaurant(formData: FormData) {
     return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent(error.message)}`);
   }
 
-  // Best-effort, non-blocking: pushes the design change to any Google Wallet
-  // passes clients already saved for this restaurant.
+  // Best-effort, non-blocking: pushes the design change to any Google/Apple
+  // Wallet passes clients already saved for this restaurant.
   if (updated) {
     after(() =>
       updateGoogleWalletClassDesign({
@@ -189,6 +193,7 @@ export async function updateRestaurant(formData: FormData) {
         logoUrl: updated.logo_url,
       })
     );
+    after(() => notifyApplePassUpdatesForRestaurant(id));
   }
 
   if (uploadWarnings.length > 0) {
