@@ -12,16 +12,23 @@ export async function updateClient(formData: FormData) {
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
 
-  if (!firstName || !lastName || !email) {
+  if (!firstName || !lastName || !email || !city) {
     return redirect(
-      `/restaurant/clients/${id}?error=${encodeURIComponent("Nom, prénom et email sont obligatoires.")}`
+      `/restaurant/clients/${id}?error=${encodeURIComponent("Nom, prénom, email et ville sont obligatoires.")}`
     );
   }
 
   const { error } = await supabaseAdmin
     .from("clients")
-    .update({ first_name: firstName, last_name: lastName, email, phone: phone || null })
+    .update({
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      phone: phone || null,
+      city,
+    })
     .eq("id", id)
     .eq("restaurant_id", restaurant.id);
 

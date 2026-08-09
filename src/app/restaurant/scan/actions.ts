@@ -5,27 +5,6 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { updateGoogleWalletStamps } from "@/lib/google-wallet";
 import { requireAuthenticatedRestaurant } from "@/lib/restaurant-auth";
 
-export async function lookupClient(clientId: string) {
-  const restaurant = await requireAuthenticatedRestaurant();
-
-  const { data: client, error } = await supabaseAdmin
-    .from("clients")
-    .select("id, first_name, last_name, email, stamps, is_vip, last_visit_at")
-    .eq("id", clientId)
-    .eq("restaurant_id", restaurant.id)
-    .single();
-
-  if (error || !client) {
-    return { error: "Client introuvable pour ce restaurant." as const };
-  }
-
-  return {
-    client,
-    stampsRequired: restaurant.stamps_required,
-    rewardText: restaurant.reward_text,
-  };
-}
-
 // Vercel's serverless functions run in UTC, so comparing calendar days with
 // plain Date getters resets the 1-stamp-per-day cap at UTC midnight — 1-2h
 // after actual French midnight depending on DST. Compare the calendar date

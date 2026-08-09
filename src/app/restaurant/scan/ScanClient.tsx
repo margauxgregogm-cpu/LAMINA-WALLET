@@ -4,22 +4,19 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { QrScanner } from "@/components/QrScanner";
 import { LoyaltyCard } from "@/components/LoyaltyCard";
-import { lookupClient, recordVisit } from "./actions";
+import { recordVisit } from "./actions";
+import { searchClients } from "../actions";
 
 type Client = {
   id: string;
   first_name: string;
   last_name: string | null;
   email: string;
+  city: string | null;
   stamps: number;
+  total_visits: number;
   is_vip: boolean;
   last_visit_at: string | null;
-};
-
-type Lookup = {
-  client: Client;
-  stampsRequired: number;
-  rewardText: string;
 };
 
 type VisitResult = {
@@ -44,8 +41,10 @@ export function ScanClient({
   backgroundColor: string;
   backgroundImageUrl: string | null;
 }) {
-  const [manualId, setManualId] = useState("");
-  const [lookup, setLookup] = useState<Lookup | null>(null);
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Client[]>([]);
+  const [searched, setSearched] = useState(false);
+  const [addingVisitId, setAddingVisitId] = useState<string | null>(null);
   const [overlayResult, setOverlayResult] = useState<VisitResult | null>(null);
   const [lastClient, setLastClient] = useState<{ id: string; name: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +83,8 @@ export function ScanClient({
     lastScanRef.current = { id: trimmed, at: now };
 
     setError(null);
-    setLookup(null);
+    setResults([]);
+    setSearched(false);
     startTransition(async () => {
       const result = await recordVisit(trimmed);
       if ("error" in result) {
@@ -95,30 +95,28 @@ export function ScanClient({
     });
   }
 
-  function runLookup(clientId: string) {
+  function runSearch(q: string) {
     setError(null);
     startTransition(async () => {
-      const result = await lookupClient(clientId.trim());
-      if ("error" in result) {
-        setLookup(null);
-        setError(result.error ?? "Erreur inconnue");
-      } else {
-        setLookup(result);
-      }
+      const data = await searchClients(q.trim());
+      setResults(data);
+      setSearched(true);
     });
   }
 
-  function handleAddVisit() {
-    if (!lookup) return;
-    startTransition(async () => {
-      const result = await recordVisit(lookup.client.id);
-      if ("error" in result) {
-        setError(result.error ?? "Erreur inconnue");
-        return;
-      }
-      setLookup(null);
-      showVisitResult(result);
-    });
+  async function handleAddVisit(client: Client) {
+    setAddingVisitId(client.id);
+    setError(null);
+    const result = await recordVisit(client.id);
+    setAddingVisitId(null);
+    if ("error" in result) {
+      setError(result.error ?? "Erreur inconnue");
+      return;
+    }
+    setResults([]);
+    setSearched(false);
+    setQuery("");
+    showVisitResult(result);
   }
 
   return (
@@ -128,19 +126,19 @@ export function ScanClient({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          runLookup(manualId);
+          runSearch(query);
         }}
         className="flex gap-2"
       >
         <input
-          value={manualId}
-          onChange={(e) => setManualId(e.target.value)}
-          placeholder="Coller l'ID client manuellement"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Chercher un client (nom, email, ville ou ID)"
           className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
         />
         <button
           type="submit"
-          disabled={isPending || !manualId.trim()}
+          disabled={isPending || !query.trim()}
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-zinc-900"
         >
           Chercher
@@ -153,37 +151,43 @@ export function ScanClient({
         </p>
       )}
 
-      {lookup && (
-        <div className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-          <div>
-            <div className="text-lg font-semibold">
-              {lookup.client.first_name} {lookup.client.last_name}
+      {searched && (
+        <div className="flex flex-col gap-3">
+          {results.length === 0 && <p className="text-sm text-zinc-500">Aucun client trouvé.</p>}
+          {results.map((client) => (
+            <div
+              key={client.id}
+              className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+            >
+              <div>
+                <Link
+                  href={`/restaurant/clients/${client.id}`}
+                  className="text-lg font-semibold underline-offset-2 hover:underline"
+                >
+                  {client.first_name} {client.last_name} {client.is_vip && <span title="VIP">⭐</span>}
+                </Link>
+                <div className="text-sm text-zinc-500">
+                  {client.email}
+                  {client.city ? ` · ${client.city}` : ""}
+                </div>
+              </div>
+              <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                Tampons : {client.stamps} — Visites totales : {client.total_visits}
+              </div>
+              {client.last_visit_at && (
+                <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                  Dernière visite : {new Date(client.last_visit_at).toLocaleDateString("fr-FR")}
+                </div>
+              )}
+              <button
+                onClick={() => handleAddVisit(client)}
+                disabled={addingVisitId === client.id}
+                className="mt-2 rounded-full bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+              >
+                {addingVisitId === client.id ? "..." : "Ajouter une visite"}
+              </button>
             </div>
-            <div className="text-sm text-zinc-500">{lookup.client.email}</div>
-          </div>
-          <div className="text-sm text-zinc-600 dark:text-zinc-400">
-            Tampons : {lookup.client.stamps} / {lookup.stampsRequired}
-          </div>
-          <div className="text-sm text-zinc-600 dark:text-zinc-400">
-            Récompense : {lookup.rewardText}
-          </div>
-          {lookup.client.last_visit_at && (
-            <div className="text-sm text-zinc-600 dark:text-zinc-400">
-              Dernière visite : {new Date(lookup.client.last_visit_at).toLocaleDateString("fr-FR")}
-            </div>
-          )}
-          {lookup.client.is_vip && (
-            <span className="w-fit rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-800">
-              VIP
-            </span>
-          )}
-          <button
-            onClick={handleAddVisit}
-            disabled={isPending}
-            className="mt-2 rounded-full bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
-          >
-            {isPending ? "..." : "Ajouter une visite"}
-          </button>
+          ))}
         </div>
       )}
 

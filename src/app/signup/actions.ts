@@ -9,8 +9,9 @@ export async function signupClient(formData: FormData) {
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
+  const city = String(formData.get("city") ?? "").trim();
 
-  if (!restaurantId || !firstName || !lastName || !email) {
+  if (!restaurantId || !firstName || !lastName || !email || !city) {
     throw new Error("Missing required fields");
   }
 
@@ -36,6 +37,7 @@ export async function signupClient(formData: FormData) {
       last_name: lastName,
       email,
       phone: phone || null,
+      city: city || null,
       stamps: initialStamps,
       total_visits: 1,
       last_visit_at: now,

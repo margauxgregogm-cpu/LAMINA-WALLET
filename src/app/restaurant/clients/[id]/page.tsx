@@ -71,6 +71,14 @@ export default async function ClientDetailPage({
             backgroundImageUrl={restaurant.background_image_url}
           />
 
+          <p className="text-center text-sm text-zinc-500">
+            Pour confirmer qu&apos;il s&apos;agit bien de ce client, vérifiez son email et sa ville :{" "}
+            <span className="font-medium text-zinc-700 dark:text-zinc-300">
+              {client.email}
+              {client.city ? ` · ${client.city}` : ""}
+            </span>
+          </p>
+
           <div className="w-full rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
@@ -157,6 +165,14 @@ export default async function ClientDetailPage({
             </FormField>
             <FormField label="Téléphone (optionnel)">
               <input name="phone" type="tel" defaultValue={client.phone ?? ""} className={formInputClass} />
+            </FormField>
+            <FormField label="Ville">
+              <input
+                name="city"
+                defaultValue={client.city ?? ""}
+                required
+                className={formInputClass}
+              />
             </FormField>
 
             <SubmitButton pendingChildren="Enregistrement..." className={primaryButtonClass}>
