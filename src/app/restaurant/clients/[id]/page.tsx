@@ -7,6 +7,8 @@ import { FormField, formInputClass, primaryButtonClass } from "@/components/Form
 import { SubmitButton } from "@/components/SubmitButton";
 import { formatRelativeDate, formatTime } from "@/lib/format-relative-date";
 import { computeVisitFrequency } from "@/lib/visit-frequency";
+import { buildGoogleWalletSaveUrl, isGoogleWalletConfigured } from "@/lib/google-wallet";
+import { isAppleWalletConfigured } from "@/lib/apple-wallet";
 import { updateClient } from "../actions";
 import { DeleteClientButton } from "../DeleteClientButton";
 import { VipToggle } from "../VipToggle";
@@ -46,6 +48,22 @@ export default async function ClientDetailPage({
   const visitDates = (visits ?? []).map((v) => new Date(v.created_at));
   const frequency = computeVisitFrequency(visitDates);
 
+  const googleWalletUrl = isGoogleWalletConfigured()
+    ? buildGoogleWalletSaveUrl({
+        restaurantId: restaurant.id,
+        restaurantName: restaurant.name,
+        backgroundColor: restaurant.background_color,
+        backgroundImageUrl: restaurant.background_image_url,
+        stampsRequired: restaurant.stamps_required,
+        rewardText: restaurant.reward_text,
+        clientId: client.id,
+        clientName: client.first_name,
+        stamps: client.stamps,
+        logoUrl: restaurant.logo_url,
+      })
+    : null;
+  const appleWalletUrl = isAppleWalletConfigured() ? `/api/apple-wallet/${client.id}` : null;
+
   return (
     <div className="flex flex-1 flex-col items-center gap-6 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
       <div className="w-full max-w-4xl">
@@ -78,6 +96,27 @@ export default async function ClientDetailPage({
               {client.city ? ` · ${client.city}` : ""}
             </span>
           </p>
+
+          {(appleWalletUrl || googleWalletUrl) && (
+            <div className="flex w-full flex-col gap-2 sm:flex-row">
+              {appleWalletUrl && (
+                <a
+                  href={appleWalletUrl}
+                  className="flex-1 rounded-xl bg-zinc-900 px-4 py-2.5 text-center text-sm font-medium text-white dark:bg-white dark:text-zinc-900"
+                >
+                  Ajouter/actualiser Apple Wallet
+                </a>
+              )}
+              {googleWalletUrl && (
+                <a
+                  href={googleWalletUrl}
+                  className="flex-1 rounded-xl bg-zinc-900 px-4 py-2.5 text-center text-sm font-medium text-white dark:bg-white dark:text-zinc-900"
+                >
+                  Ajouter/actualiser Google Wallet
+                </a>
+              )}
+            </div>
+          )}
 
           <div className="w-full rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
             <div className="grid grid-cols-3 gap-4 text-center">

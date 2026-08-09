@@ -112,11 +112,6 @@ export default async function SignupSuccessPage({
           </button>
         )}
       </div>
-      <p className="text-xs text-zinc-400">
-        {googleWalletUrl
-          ? "L'ajout à Apple Wallet arrive dans une prochaine étape."
-          : "L'ajout à Apple Wallet / Google Wallet arrive dans une prochaine étape."}
-      </p>
     </div>
   );
 }
