@@ -57,9 +57,13 @@ export async function sendPushNotification(formData: FormData) {
   // just tells devices "go re-fetch your pass", and the notification only
   // appears if that re-fetch sees this field's value change (see migration
   // 012_wallet_announcement.sql). Pushing first would race the write.
+  // updated_at also has to move: it's what the PassKit web-service routes
+  // use to decide "has this pass changed" (both the changed-passes list and
+  // the If-Modified-Since check), and a plain column update doesn't bump it
+  // on its own -- an announcement-only send was invisible to both.
   const { error: announceError } = await supabaseAdmin
     .from("restaurants")
-    .update({ wallet_announcement: message })
+    .update({ wallet_announcement: message, updated_at: new Date().toISOString() })
     .eq("id", restaurant.id);
   if (announceError) {
     // The send is already recorded and charged to the quota -- surfacing
