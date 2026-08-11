@@ -19,6 +19,10 @@ export async function loginRestaurant(formData: FormData) {
 
 export async function logoutRestaurant() {
   const supabase = await createClient("restaurant");
-  await supabase.auth.signOut();
+  // scope: "local" ends only this device's session. Supabase defaults to
+  // "global", which revokes every session of the account everywhere -- so
+  // one till logging out kicked every other till and phone off the same
+  // restaurant account.
+  await supabase.auth.signOut({ scope: "local" });
   redirect("/restaurant/login");
 }
