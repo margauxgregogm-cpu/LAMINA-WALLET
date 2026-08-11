@@ -8,20 +8,28 @@ import { ColorSwatchPicker } from "@/components/ColorSwatchPicker";
 import { SubmitButton } from "@/components/SubmitButton";
 import { adminInputClass, adminButtonClass, adminSecondaryButtonClass } from "@/components/admin/adminFormClasses";
 import { BUSINESS_CATEGORIES } from "@/lib/business-categories";
-import { updateRestaurant, resetRestaurantPassword } from "../actions";
+import { updateRestaurant, resetRestaurantPassword, updateRestaurantOptions } from "../actions";
 import { DeleteRestaurantButton } from "../DeleteRestaurantButton";
+import { getPushQuotaStatus } from "@/lib/push-quota";
+import { PUSH_PLAN_LIST, describePeriod, formatRenewalDate } from "@/lib/push-plans";
 
 export default async function EditRestaurantPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; saved?: string; passwordReset?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    saved?: string;
+    passwordReset?: string;
+    optionsSaved?: string;
+  }>;
 }) {
   if (!(await isAdmin())) redirect("/admin/login");
 
   const { id } = await params;
-  const { error, saved, passwordReset } = await searchParams;
+  const { error, saved, passwordReset, optionsSaved } = await searchParams;
+  const pushStatus = await getPushQuotaStatus(id);
 
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
@@ -57,6 +65,11 @@ export default async function EditRestaurantPage({
         {passwordReset && (
           <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
             Mot de passe mis à jour.
+          </p>
+        )}
+        {optionsSaved && (
+          <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
+            Options mises à jour.
           </p>
         )}
         {error && <p className="mb-4 rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">{error}</p>}
@@ -231,6 +244,91 @@ export default async function EditRestaurantPage({
             Enregistrer
           </SubmitButton>
         </form>
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900 p-6">
+          <h2 className="mb-1 text-lg font-bold tracking-tight text-zinc-100">Options</h2>
+          <p className="mb-5 text-sm text-zinc-400">
+            Fonctionnalités supplémentaires activables pour cette entreprise.
+          </p>
+
+          <div className="rounded-xl border border-white/10 p-4">
+            <h3 className="mb-3 text-sm font-semibold text-zinc-100">Notifications Push</h3>
+
+            <form action={updateRestaurantOptions} className="space-y-4">
+              <input type="hidden" name="id" value={restaurant.id} />
+
+              <label className="flex items-center gap-3 text-sm text-zinc-100">
+                <input
+                  type="checkbox"
+                  name="pushNotificationsEnabled"
+                  defaultChecked={pushStatus.enabled}
+                  className="h-4 w-4"
+                />
+                Activer les notifications push
+              </label>
+
+              <FormField label="Forfait attribué">
+                <select
+                  name="pushPlan"
+                  defaultValue={pushStatus.plan?.id ?? ""}
+                  className={adminInputClass}
+                >
+                  <option value="">Aucun forfait</option>
+                  {PUSH_PLAN_LIST.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label} — {p.description}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+
+              <SubmitButton pendingChildren="Enregistrement..." className={adminSecondaryButtonClass}>
+                Enregistrer les options
+              </SubmitButton>
+            </form>
+
+            <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-white/10 pt-4 text-sm sm:grid-cols-3">
+              <div>
+                <dt className="text-xs text-zinc-500">État</dt>
+                <dd className={pushStatus.enabled ? "text-emerald-400" : "text-zinc-400"}>
+                  {pushStatus.enabled ? "Activées" : "Désactivées"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-zinc-500">Forfait</dt>
+                <dd className="text-zinc-100">{pushStatus.plan?.label ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-zinc-500">Limite</dt>
+                <dd className="text-zinc-100">
+                  {pushStatus.plan
+                    ? `${pushStatus.limit} / ${pushStatus.plan.period === "quarter" ? "trimestre" : "mois"}`
+                    : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-zinc-500">Utilisées</dt>
+                <dd className="text-zinc-100">{pushStatus.plan ? pushStatus.used : "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-zinc-500">Restantes</dt>
+                <dd className="text-zinc-100">{pushStatus.plan ? pushStatus.remaining : "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-zinc-500">Période</dt>
+                <dd className="text-zinc-100">
+                  {pushStatus.plan ? `${pushStatus.periodKey} (${describePeriod(pushStatus.plan)})` : "—"}
+                </dd>
+              </div>
+              <div className="col-span-2 sm:col-span-3">
+                <dt className="text-xs text-zinc-500">Prochain renouvellement</dt>
+                <dd className="text-zinc-100">
+                  {pushStatus.renewalDate ? formatRenewalDate(pushStatus.renewalDate) : "—"}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900 p-6">
           <h2 className="mb-3 text-sm font-semibold text-zinc-100">Mot de passe du restaurant</h2>

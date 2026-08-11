@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { updateGoogleWalletClassDesign, updateGoogleWalletRewardTextForRestaurant } from "@/lib/google-wallet";
 import { notifyApplePassUpdatesForRestaurant } from "@/lib/apple-wallet-push";
+import { getPushPlan } from "@/lib/push-plans";
 
 // The client-side `pattern` attribute on the slug field is trivially
 // bypassed (JS-driven form fills, browsers that don't enforce it), so the
@@ -273,6 +274,42 @@ export async function updateRestaurant(formData: FormData) {
   }
 
   redirect(`/admin/restaurants/${id}?saved=1`);
+}
+
+// Extra per-restaurant options an admin can switch on. Kept as its own
+// action (and its own form) so it can't interfere with the main edit form's
+// image uploads and wallet sync -- and so more options can be added here
+// later without touching updateRestaurant.
+export async function updateRestaurantOptions(formData: FormData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") ?? "");
+  const pushEnabled = formData.get("pushNotificationsEnabled") === "on";
+  const rawPlan = String(formData.get("pushPlan") ?? "").trim();
+  // Guard against an arbitrary value being posted: only known plan ids are
+  // stored, anything else is treated as "no plan".
+  const pushPlan = getPushPlan(rawPlan)?.id ?? null;
+
+  if (pushEnabled && !pushPlan) {
+    return redirect(
+      `/admin/restaurants/${id}?error=${encodeURIComponent(
+        "Choisissez un forfait avant d'activer les notifications push."
+      )}`
+    );
+  }
+
+  const { error } = await supabaseAdmin
+    .from("restaurants")
+    .update({ push_notifications_enabled: pushEnabled, push_plan: pushPlan })
+    .eq("id", id);
+
+  if (error) {
+    return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  // Deliberately does NOT bump updated_at or trigger the wallet sync: options
+  // don't change the loyalty card, so there's no reason to re-push passes.
+  redirect(`/admin/restaurants/${id}?optionsSaved=1`);
 }
 
 export async function resetRestaurantPassword(formData: FormData) {
