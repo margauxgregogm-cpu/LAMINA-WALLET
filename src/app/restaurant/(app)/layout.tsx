@@ -5,6 +5,7 @@ import { pickForegroundColor, tint, shade, isLightColor } from "@/lib/color-cont
 import { RestaurantSidebar } from "@/components/restaurant/RestaurantSidebar";
 import { RestaurantHeader } from "@/components/restaurant/RestaurantHeader";
 import { RestaurantBottomNav } from "@/components/restaurant/RestaurantBottomNav";
+import { LiveRestaurantSettings } from "@/components/restaurant/LiveRestaurantSettings";
 
 // Overrides the parent layout's static green themeColor so the installed
 // PWA's title bar (and the mobile browser chrome) takes each restaurant's
@@ -51,6 +52,7 @@ export default async function RestaurantAppLayout({ children }: { children: Reac
 
   return (
     <div style={themeStyle} className="flex min-h-screen w-full text-[var(--theme-text)]">
+      <LiveRestaurantSettings restaurantId={restaurant.id} />
       <RestaurantSidebar restaurantName={restaurant.name} logoUrl={restaurant.logo_url} />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
         <RestaurantHeader restaurantName={restaurant.name} logoUrl={restaurant.logo_url} />
