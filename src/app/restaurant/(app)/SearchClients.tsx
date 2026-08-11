@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import Link from "next/link";
-import { searchClients, toggleVip } from "./actions";
+import { searchClients, toggleVip } from "../actions";
 import { recordVisit } from "./scan/actions";
 import { formatRelativeDate } from "@/lib/format-relative-date";
 
@@ -18,8 +18,8 @@ type Client = {
   last_visit_at: string | null;
 };
 
-export function SearchClients() {
-  const [query, setQuery] = useState("");
+export function SearchClients({ initialQuery = "" }: { initialQuery?: string } = {}) {
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<Client[]>([]);
   const [searched, setSearched] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -36,6 +36,16 @@ export function SearchClients() {
       setSearched(true);
     });
   }
+
+  // Runs the search the header bar handed over via ?q=, so submitting from
+  // the header lands on this page with results already showing.
+  const ranInitialRef = useRef(false);
+  useEffect(() => {
+    if (ranInitialRef.current || !initialQuery.trim()) return;
+    ranInitialRef.current = true;
+    runSearch(initialQuery);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
 
   function handleToggleVip(client: Client) {
     const next = !client.is_vip;
@@ -72,7 +82,7 @@ export function SearchClients() {
   }
 
   return (
-    <div className="w-full max-w-5xl">
+    <div className="w-full">
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -84,12 +94,12 @@ export function SearchClients() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Rechercher un client (nom, email ou ville)"
-          className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm shadow-sm outline-none"
         />
         <button
           type="submit"
           disabled={isPending || !query.trim()}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-zinc-900"
+          className="shrink-0 rounded-full bg-[var(--theme-accent)] px-5 py-2.5 text-sm font-semibold text-[var(--theme-accent-fg)] shadow-sm disabled:opacity-50"
         >
           Rechercher
         </button>
@@ -98,35 +108,35 @@ export function SearchClients() {
       {searched && (
         <div className="mt-4 flex flex-col gap-3">
           {results.length === 0 && (
-            <p className="text-sm text-zinc-500">Aucun client trouvé.</p>
+            <p className="text-sm opacity-60">Aucun client trouvé.</p>
           )}
           {results.map((client) => (
             <div
               key={client.id}
-              className="flex flex-col gap-2 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+              className="flex flex-col gap-2 rounded-2xl border border-black/5 bg-[var(--theme-card,#fff)] p-4 text-[var(--theme-card-fg,#18181b)] shadow-sm"
             >
-              <div className="flex items-center justify-between">
-                <div>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
                   <Link
                     href={`/restaurant/clients/${client.id}`}
                     className="font-semibold underline-offset-2 hover:underline"
                   >
                     {client.first_name} {client.last_name} {client.is_vip && <span title="VIP">⭐</span>}
                   </Link>
-                  <div className="text-sm text-zinc-500">
+                  <div className="truncate text-sm opacity-60">
                     {client.email}
                     {client.city ? ` · ${client.city}` : ""}
                   </div>
                 </div>
                 <button
                   onClick={() => handleToggleVip(client)}
-                  className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                  className="shrink-0 rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-black/5"
                 >
                   {client.is_vip ? "Retirer VIP" : "Marquer VIP"}
                 </button>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+                <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm opacity-70">
                   <span>Tampons : {client.stamps}</span>
                   <span>Visites totales : {client.total_visits}</span>
                   <span>Dernière visite : {formatRelativeDate(client.last_visit_at)}</span>
@@ -134,7 +144,7 @@ export function SearchClients() {
                 <button
                   onClick={() => handleAddVisit(client)}
                   disabled={addingVisitId === client.id}
-                  className="shrink-0 rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                  className="shrink-0 rounded-full bg-[var(--theme-accent)] px-4 py-2 text-xs font-semibold text-[var(--theme-accent-fg)] transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
                   {addingVisitId === client.id ? "..." : "Ajouter une visite"}
                 </button>

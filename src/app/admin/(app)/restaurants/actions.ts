@@ -108,6 +108,12 @@ export async function createRestaurant(formData: FormData) {
   const address = String(formData.get("address") ?? "").trim();
   const loginEmail = String(formData.get("loginEmail") ?? "").trim();
   const loginPassword = String(formData.get("loginPassword") ?? "");
+  // Entreprise-app interface theming — independent of backgroundColor above
+  // (the loyalty card's own color, synced to Apple/Google Wallet). These 3
+  // are UI-only and never sent to either wallet.
+  const interfaceThemeColor = String(formData.get("interfaceThemeColor") ?? "#059669");
+  const interfaceTextColor = String(formData.get("interfaceTextColor") ?? "#18181b");
+  const interfaceCardColor = String(formData.get("interfaceCardColor") ?? "#ffffff");
 
   if (!name || !slug || !rewardText || !loginEmail || !loginPassword) {
     return redirect(
@@ -152,6 +158,9 @@ export async function createRestaurant(formData: FormData) {
       address: address || null,
       logo_url: logoUrl,
       user_id: authUser.user.id,
+      interface_theme_color: interfaceThemeColor,
+      interface_text_color: interfaceTextColor,
+      interface_card_color: interfaceCardColor,
     })
     .select("id")
     .single();
@@ -184,6 +193,9 @@ export async function updateRestaurant(formData: FormData) {
   const rewardText = String(formData.get("rewardText") ?? "").trim();
   const welcomeOfferText = String(formData.get("welcomeOfferText") ?? "").trim();
   const address = String(formData.get("address") ?? "").trim();
+  const interfaceThemeColor = String(formData.get("interfaceThemeColor") ?? "#059669");
+  const interfaceTextColor = String(formData.get("interfaceTextColor") ?? "#18181b");
+  const interfaceCardColor = String(formData.get("interfaceCardColor") ?? "#ffffff");
 
   if (!name || !slug || !rewardText) {
     return redirect(
@@ -208,6 +220,9 @@ export async function updateRestaurant(formData: FormData) {
     reward_text: rewardText,
     welcome_offer_text: welcomeOfferText || null,
     address: address || null,
+    interface_theme_color: interfaceThemeColor,
+    interface_text_color: interfaceTextColor,
+    interface_card_color: interfaceCardColor,
     // Lets the Apple Wallet push-update endpoint tell which already-saved
     // passes need refreshing (see apple-wallet-push.ts).
     updated_at: new Date().toISOString(),

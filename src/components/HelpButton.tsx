@@ -2,7 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 
-export function HelpButton() {
+// `direction="up"` is needed wherever the button sits near the bottom of the
+// viewport (the sidebar footer, the mobile "Plus" sheet) -- opening downward
+// there pushed the contact details off-screen and made them unreachable.
+export function HelpButton({ direction = "down" }: { direction?: "down" | "up" } = {}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -26,7 +29,15 @@ export function HelpButton() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-zinc-200 bg-white p-4 text-sm shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+        <div
+          className={`absolute z-50 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-zinc-200 bg-white p-4 text-sm shadow-lg dark:border-zinc-800 dark:bg-zinc-900 ${
+            // Opening upward means we're in a narrow container (sidebar
+            // footer / mobile sheet) that is itself narrower than this
+            // panel, so anchor left and grow rightward -- anchoring right
+            // pushed the panel off the left edge of the screen.
+            direction === "up" ? "bottom-full left-0 mb-2" : "right-0 mt-2"
+          }`}
+        >
           <p className="mb-3 font-medium">Contacter le support</p>
           <a
             href="mailto:contact@laminacards.com"
