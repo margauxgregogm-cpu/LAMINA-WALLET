@@ -24,6 +24,24 @@ export function darken([r, g, b]: [number, number, number], amount: number): str
   return `rgb(${d(r)}, ${d(g)}, ${d(b)})`;
 }
 
+// Blends a color toward a target (white/black) -- used to derive the whole
+// entreprise interface palette (page background, sidebar, icon pills) from
+// the single theme color an admin picks, so one choice tints the entire UI
+// instead of just the active nav item.
+function mixWith(hex: string, target: [number, number, number], ratio: number): string {
+  const [r, g, b] = hexToRgb(hex);
+  const m = (c: number, t: number) => Math.round(c + (t - c) * ratio);
+  return `rgb(${m(r, target[0])}, ${m(g, target[1])}, ${m(b, target[2])})`;
+}
+
+export function tint(hex: string, ratio: number): string {
+  return mixWith(hex, [255, 255, 255], ratio);
+}
+
+export function shade(hex: string, ratio: number): string {
+  return mixWith(hex, [0, 0, 0], ratio);
+}
+
 export function isLightColor(hex: string): boolean {
   return relativeLuminance(hexToRgb(hex)) > 0.55;
 }

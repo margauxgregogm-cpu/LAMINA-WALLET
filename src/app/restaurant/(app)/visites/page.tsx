@@ -33,23 +33,28 @@ export default async function VisitesPage() {
   const maxWeekly = Math.max(1, ...weeklyCounts.map((w) => w.count));
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-6 px-4 py-8 md:py-12">
-      <div className="w-full max-w-5xl">
-        <h1 className="text-2xl font-bold tracking-tight">Visites &amp; statistiques</h1>
-        <p className="text-[var(--theme-text)]/60">Activité réelle de votre carte de fidélité.</p>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 md:py-8">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Visites &amp; statistiques</h1>
+        <p className="opacity-60">Activité réelle de votre carte de fidélité.</p>
       </div>
 
-      <div className="grid w-full max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2">
-        <KpiTile label="Visites ce mois-ci" value={visitsThisMonth} sublabel={visitsDeltaLabel} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <KpiTile
+          icon="stats"
+          label="Visites ce mois-ci"
+          value={visitsThisMonth}
+          sublabel={visitsDeltaLabel}
+        />
+        <KpiTile
+          icon="clients"
           label="Clients actifs ce mois-ci"
           value={activeClientsThisMonth}
           sublabel="Clients ayant visité au moins une fois"
         />
       </div>
 
-      <Panel className="w-full max-w-5xl">
-        <h2 className="mb-4 text-sm font-semibold">Visites par semaine (8 dernières semaines)</h2>
+      <Panel title="Visites par semaine (8 dernières semaines)">
         <div className="flex flex-col gap-2">
           {weeklyCounts.map(({ weekStart, count }) => (
             <div key={weekStart.toISOString()} className="flex items-center gap-3 text-sm">

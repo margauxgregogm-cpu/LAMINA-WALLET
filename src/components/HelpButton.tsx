@@ -2,7 +2,10 @@
 
 import { useState, useRef, useEffect } from "react";
 
-export function HelpButton() {
+// `direction="up"` is needed wherever the button sits near the bottom of the
+// viewport (the sidebar footer, the mobile "Plus" sheet) -- opening downward
+// there pushed the contact details off-screen and made them unreachable.
+export function HelpButton({ direction = "down" }: { direction?: "down" | "up" } = {}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -26,7 +29,11 @@ export function HelpButton() {
       </button>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-zinc-200 bg-white p-4 text-sm shadow-lg dark:border-zinc-800 dark:bg-zinc-900">
+        <div
+          className={`absolute left-0 z-50 w-72 rounded-xl border border-zinc-200 bg-white p-4 text-sm shadow-lg sm:left-auto sm:right-0 dark:border-zinc-800 dark:bg-zinc-900 ${
+            direction === "up" ? "bottom-full mb-2" : "mt-2"
+          }`}
+        >
           <p className="mb-3 font-medium">Contacter le support</p>
           <a
             href="mailto:contact@laminacards.com"

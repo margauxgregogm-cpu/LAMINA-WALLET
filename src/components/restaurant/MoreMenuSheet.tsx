@@ -41,7 +41,7 @@ export function MoreMenuSheet({ open, onClose }: { open: boolean; onClose: () =>
             );
           })}
           <div className="px-4 py-2">
-            <HelpButton />
+            <HelpButton direction="up" />
           </div>
           <form action={logoutRestaurant}>
             <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900">

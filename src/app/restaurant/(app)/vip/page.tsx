@@ -17,18 +17,18 @@ export default async function VipPage() {
     .order("total_visits", { ascending: false });
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-6 px-4 py-8 md:py-12">
-      <div className="w-full max-w-5xl">
-        <h1 className="text-2xl font-bold tracking-tight">Clients VIP ⭐</h1>
-        <p className="text-[var(--theme-text)]/60">{(clients ?? []).length} client(s) VIP.</p>
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 md:py-8">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Clients VIP ⭐</h1>
+        <p className="opacity-60">{(clients ?? []).length} client(s) VIP.</p>
       </div>
 
-      <div className="grid w-full max-w-5xl grid-cols-1 gap-3 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
         {(clients ?? []).map((client) => (
           <ClientCard key={client.id} client={client} />
         ))}
         {(!clients || clients.length === 0) && (
-          <p className="text-sm text-[var(--theme-text)]/60">
+          <p className="text-sm opacity-60">
             Aucun client VIP pour le moment. Marquez un client comme VIP depuis sa fiche.
           </p>
         )}
