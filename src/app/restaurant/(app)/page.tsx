@@ -79,47 +79,64 @@ export default async function RestaurantDashboardPage() {
       : `${visitsDelta >= 0 ? "+" : ""}${visitsDelta} vs mois dernier`;
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 md:py-8">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
       <LiveDashboardUpdates restaurantId={restaurant.id} />
 
       <div>
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+        <h1 className="text-xl font-bold tracking-tight md:text-2xl">
           Bonjour, {restaurant.name} 👋
         </h1>
-        <p className="opacity-60">Voici votre activité aujourd&apos;hui.</p>
+        <p className="text-sm opacity-60">Voici votre activité aujourd&apos;hui.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <KpiTile icon="clients" label="Clients" value={clientsCount} sublabel="Total" />
+      <div className="grid grid-cols-3 gap-3 md:gap-4">
+        <KpiTile
+          icon="clients"
+          label="Clients"
+          value={clientsCount}
+          sublabel="Total"
+          href="/restaurant/clients"
+        />
         <KpiTile
           icon="stats"
           label="Visites ce mois-ci"
           value={visitsThisMonth}
           sublabel={visitsDeltaLabel}
+          href="/restaurant/visites"
         />
-        <KpiTile icon="vip" label="VIP" value={vipCount} sublabel="Clients VIP" />
+        <KpiTile
+          icon="vip"
+          label="VIP"
+          value={vipCount}
+          sublabel="Clients VIP"
+          href="/restaurant/vip"
+        />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Panel title="Inscrire un nouveau client" className="lg:col-span-1">
-          <p className="mb-4 text-sm opacity-60">
+          <p className="mb-3 text-sm opacity-60">
             Montrez ce QR code à un client pour qu&apos;il crée sa carte de fidélité.
           </p>
-          <div className="flex flex-col items-center gap-3">
-            <div className="rounded-2xl border border-[var(--theme-accent-soft)] p-3">
+          <div className="flex flex-col items-center gap-2">
+            <div className="rounded-xl border border-[var(--theme-accent-soft)] p-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qrDataUrl} alt="QR code d'inscription" width={220} height={220} />
+              <img
+                src={qrDataUrl}
+                alt="QR code d'inscription"
+                className="h-auto w-full max-w-[150px]"
+              />
             </div>
             <a
               href={publicUrl}
-              className="break-all text-center text-xs font-medium text-[var(--theme-accent-strong)] underline"
+              className="break-all text-center text-[11px] font-medium text-[var(--theme-accent-strong)] underline"
             >
               {publicUrl}
             </a>
           </div>
         </Panel>
 
-        <div className="flex flex-col gap-6 lg:col-span-2">
+        <div className="flex flex-col gap-4 lg:col-span-2">
           <Panel
             title="Meilleurs clients"
             actionLabel="Voir tout"
@@ -203,7 +220,7 @@ export default async function RestaurantDashboardPage() {
         </div>
       </div>
 
-      <div className="flex items-start gap-3 rounded-2xl bg-[var(--theme-accent-soft)] px-5 py-4 text-sm">
+      <div className="flex items-start gap-3 rounded-2xl bg-[var(--theme-accent-soft)] px-4 py-3 text-sm">
         <span className="text-lg leading-none">💡</span>
         <p>
           <span className="font-semibold">Conseil</span> — Scannez la carte de fidélité d&apos;un

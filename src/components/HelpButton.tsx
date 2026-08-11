@@ -30,8 +30,12 @@ export function HelpButton({ direction = "down" }: { direction?: "down" | "up" }
 
       {open && (
         <div
-          className={`absolute left-0 z-50 w-72 rounded-xl border border-zinc-200 bg-white p-4 text-sm shadow-lg sm:left-auto sm:right-0 dark:border-zinc-800 dark:bg-zinc-900 ${
-            direction === "up" ? "bottom-full mb-2" : "mt-2"
+          className={`absolute z-50 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-zinc-200 bg-white p-4 text-sm shadow-lg dark:border-zinc-800 dark:bg-zinc-900 ${
+            // Opening upward means we're in a narrow container (sidebar
+            // footer / mobile sheet) that is itself narrower than this
+            // panel, so anchor left and grow rightward -- anchoring right
+            // pushed the panel off the left edge of the screen.
+            direction === "up" ? "bottom-full left-0 mb-2" : "right-0 mt-2"
           }`}
         >
           <p className="mb-3 font-medium">Contacter le support</p>

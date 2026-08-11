@@ -25,8 +25,8 @@ export function Panel({
       className={`overflow-hidden rounded-2xl border border-black/5 bg-[var(--theme-card,#fff)] text-[var(--theme-card-fg,#18181b)] shadow-sm ${className}`}
     >
       {(title || actionLabel) && (
-        <div className="flex items-center justify-between gap-3 px-5 pt-5">
-          {title && <h2 className="font-bold tracking-tight">{title}</h2>}
+        <div className="flex items-center justify-between gap-3 px-4 pt-4">
+          {title && <h2 className="text-sm font-bold tracking-tight sm:text-base">{title}</h2>}
           {actionLabel && actionHref && (
             <Link
               href={actionHref}
@@ -37,7 +37,7 @@ export function Panel({
           )}
         </div>
       )}
-      <div className={`p-5 ${bodyClassName}`}>{children}</div>
+      <div className={`p-4 ${bodyClassName}`}>{children}</div>
     </section>
   );
 }
