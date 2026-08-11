@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { searchClients, toggleVip } from "./actions";
+import { searchClients, toggleVip } from "../actions";
 import { recordVisit } from "./scan/actions";
 import { formatRelativeDate } from "@/lib/format-relative-date";
 

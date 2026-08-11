@@ -7,6 +7,7 @@ import { FormField, formInputClass, primaryButtonClass } from "@/components/Form
 import { SubmitButton } from "@/components/SubmitButton";
 import { formatRelativeDate, formatTime } from "@/lib/format-relative-date";
 import { computeVisitFrequency } from "@/lib/visit-frequency";
+import { Panel } from "@/components/restaurant/Panel";
 import { updateClient } from "../actions";
 import { DeleteClientButton } from "../DeleteClientButton";
 import { VipToggle } from "../VipToggle";
@@ -47,11 +48,11 @@ export default async function ClientDetailPage({
   const frequency = computeVisitFrequency(visitDates);
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-6 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
+    <div className="flex flex-1 flex-col items-center gap-6 px-4 py-8 md:py-12">
       <div className="w-full max-w-4xl">
         <Link
           href="/restaurant"
-          className="text-sm text-zinc-500 underline hover:text-zinc-700 dark:hover:text-zinc-300"
+          className="text-sm text-[var(--theme-text)]/60 underline hover:text-[var(--theme-text)]/80"
         >
           ← Retour au tableau de bord
         </Link>
@@ -71,65 +72,67 @@ export default async function ClientDetailPage({
             backgroundImageUrl={restaurant.background_image_url}
           />
 
-          <p className="text-center text-sm text-zinc-500">
+          <p className="text-center text-sm text-[var(--theme-text)]/60">
             Pour confirmer qu&apos;il s&apos;agit bien de ce client, vérifiez son email et sa ville :{" "}
-            <span className="font-medium text-zinc-700 dark:text-zinc-300">
+            <span className="font-medium text-[var(--theme-text)]/90">
               {client.email}
               {client.city ? ` · ${client.city}` : ""}
             </span>
           </p>
 
-          <div className="w-full rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+          <Panel className="w-full">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl font-semibold">{client.total_visits}</div>
-                <div className="text-xs text-zinc-500">Visites</div>
+                <div className="text-xs text-[var(--theme-card-fg,#18181b)]/60">Visites</div>
               </div>
               <div>
                 <div className="text-2xl font-semibold">
                   {client.stamps} / {restaurant.stamps_required}
                 </div>
-                <div className="text-xs text-zinc-500">Tampons</div>
+                <div className="text-xs text-[var(--theme-card-fg,#18181b)]/60">Tampons</div>
               </div>
               <div>
                 <div className="text-lg font-semibold">{formatRelativeDate(client.last_visit_at)}</div>
-                <div className="text-xs text-zinc-500">Dernière visite</div>
+                <div className="text-xs text-[var(--theme-card-fg,#18181b)]/60">Dernière visite</div>
               </div>
             </div>
             <div className="mt-4 flex justify-center">
               <VipToggle clientId={client.id} initialIsVip={client.is_vip} />
             </div>
-          </div>
+          </Panel>
 
-          <div className="w-full rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-            <h2 className="mb-3 text-sm font-semibold text-zinc-500">Fréquence de visite</h2>
+          <Panel className="w-full">
+            <h2 className="mb-3 text-sm font-semibold text-[var(--theme-card-fg,#18181b)]/60">
+              Fréquence de visite
+            </h2>
             <div className="mb-1 text-lg font-semibold">{frequency.label}</div>
-            <p className="text-sm text-zinc-500">{frequency.detail}</p>
+            <p className="text-sm text-[var(--theme-card-fg,#18181b)]/60">{frequency.detail}</p>
 
             {visitDates.length > 0 && (
               <>
-                <hr className="my-4 border-zinc-200 dark:border-zinc-800" />
-                <h3 className="mb-2 text-sm font-semibold text-zinc-500">
+                <hr className="my-4 border-black/10 dark:border-white/10" />
+                <h3 className="mb-2 text-sm font-semibold text-[var(--theme-card-fg,#18181b)]/60">
                   Historique des visites ({visitDates.length})
                 </h3>
                 <ul className="flex flex-wrap gap-2">
                   {visitDates.slice(0, 12).map((date, i) => (
                     <li
                       key={i}
-                      className="rounded-lg bg-zinc-100 px-2 py-1 text-xs text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                      className="rounded-lg bg-black/5 px-2 py-1 text-xs text-[var(--theme-card-fg,#18181b)]/70 dark:bg-white/10"
                     >
                       {date.toLocaleDateString("fr-FR")} · {formatTime(date.toISOString())}
                     </li>
                   ))}
                   {visitDates.length > 12 && (
-                    <li className="px-2 py-1 text-xs text-zinc-400">
+                    <li className="px-2 py-1 text-xs text-[var(--theme-card-fg,#18181b)]/50">
                       + {visitDates.length - 12} autre(s)
                     </li>
                   )}
                 </ul>
               </>
             )}
-          </div>
+          </Panel>
         </div>
 
         <div className="w-full">
@@ -180,7 +183,7 @@ export default async function ClientDetailPage({
             </SubmitButton>
           </form>
 
-          <hr className="my-8 border-zinc-200 dark:border-zinc-800" />
+          <hr className="my-8 border-black/10 dark:border-white/10" />
 
           <h2 className="mb-3 text-sm font-semibold text-red-600 dark:text-red-400">Zone de danger</h2>
           <DeleteClientButton id={client.id} name={fullName} />

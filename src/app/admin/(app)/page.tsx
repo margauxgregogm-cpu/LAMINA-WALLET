@@ -2,8 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { AdminNav } from "@/components/AdminNav";
-import { primaryPillLinkClass } from "@/components/FormField";
 import { LiveAdminUpdates } from "./LiveAdminUpdates";
 
 const NO_CATEGORY = "Sans catégorie";
@@ -62,14 +60,16 @@ export default async function AdminHomePage({
   });
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-8 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
+    <div className="flex flex-1 flex-col items-center gap-8 px-4 py-8 md:py-12">
       <LiveAdminUpdates />
-      <AdminNav />
 
-      <div className="w-full max-w-2xl">
+      <div className="w-full max-w-3xl">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold tracking-tight">Entreprises</h2>
-          <Link href="/admin/restaurants/new" className={primaryPillLinkClass}>
+          <h1 className="text-2xl font-bold tracking-tight">Entreprises</h1>
+          <Link
+            href="/admin/restaurants/new"
+            className="rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 shadow-sm transition-colors hover:bg-amber-400"
+          >
             + Nouvelle entreprise
           </Link>
         </div>
@@ -80,12 +80,12 @@ export default async function AdminHomePage({
             name="q"
             defaultValue={q ?? ""}
             placeholder="Rechercher une entreprise..."
-            className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="flex-1 rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500"
           />
           <select
             name="category"
             defaultValue={category ?? ""}
-            className="rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-100"
           >
             <option value="">Toutes les catégories</option>
             {categories.map((c) => (
@@ -97,7 +97,7 @@ export default async function AdminHomePage({
           </select>
           <button
             type="submit"
-            className="shrink-0 rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            className="shrink-0 rounded-lg border border-white/10 px-4 py-2 text-sm font-medium text-zinc-100 hover:bg-white/5"
           >
             Filtrer
           </button>
@@ -106,13 +106,13 @@ export default async function AdminHomePage({
         <div className="flex flex-col gap-6">
           {groupNames.map((groupName) => (
             <div key={groupName}>
-              <h3 className="mb-2 text-sm font-semibold text-zinc-500">{groupName}</h3>
+              <h3 className="mb-2 text-sm font-semibold text-zinc-400">{groupName}</h3>
               <div className="flex flex-col gap-2">
                 {grouped.get(groupName)!.map((r) => (
                   <Link
                     key={r.id}
                     href={`/admin/restaurants/${r.id}`}
-                    className="flex items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 py-3 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+                    className="flex items-center justify-between rounded-xl border border-white/10 bg-zinc-900 px-4 py-3 transition-colors hover:border-white/20"
                   >
                     <div className="flex items-center gap-3">
                       {r.logo_url ? (
@@ -123,18 +123,18 @@ export default async function AdminHomePage({
                           className="h-10 w-10 shrink-0 rounded-lg object-cover"
                         />
                       ) : (
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-xs font-medium text-zinc-400 dark:bg-zinc-800">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-zinc-800 text-xs font-medium text-zinc-400">
                           {r.name.slice(0, 2).toUpperCase()}
                         </div>
                       )}
                       <div>
-                        <div className="font-medium">{r.name}</div>
+                        <div className="font-medium text-zinc-100">{r.name}</div>
                         {r.user_id && emailByUserId.get(r.user_id) && (
-                          <div className="text-sm text-zinc-500">{emailByUserId.get(r.user_id)}</div>
+                          <div className="text-sm text-zinc-400">{emailByUserId.get(r.user_id)}</div>
                         )}
                       </div>
                     </div>
-                    <div className="text-right text-sm text-zinc-500">
+                    <div className="text-right text-sm text-zinc-400">
                       <div>{clientCountByRestaurant.get(r.id) ?? 0} personne(s)</div>
                       <div>{r.stamps_required} tampons</div>
                     </div>
@@ -144,7 +144,7 @@ export default async function AdminHomePage({
             </div>
           ))}
           {filtered.length === 0 && (
-            <p className="text-sm text-zinc-500">Aucune entreprise ne correspond.</p>
+            <p className="text-sm text-zinc-400">Aucune entreprise ne correspond.</p>
           )}
         </div>
       </div>

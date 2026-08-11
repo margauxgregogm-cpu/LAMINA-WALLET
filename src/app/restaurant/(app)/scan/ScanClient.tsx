@@ -5,7 +5,7 @@ import Link from "next/link";
 import { QrScanner } from "@/components/QrScanner";
 import { LoyaltyCard } from "@/components/LoyaltyCard";
 import { recordVisit } from "./actions";
-import { searchClients } from "../actions";
+import { searchClients } from "../../actions";
 import { enqueueScan, getQueue, removeFromQueue } from "@/lib/offline-scan-queue";
 
 type Client = {
@@ -206,12 +206,12 @@ export function ScanClient({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Chercher un client (nom, email, ville ou ID)"
-          className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="flex-1 rounded-lg border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-zinc-900"
         />
         <button
           type="submit"
           disabled={isPending || !query.trim()}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-white dark:text-zinc-900"
+          className="rounded-lg bg-[var(--theme-accent,#059669)] px-4 py-2 text-sm font-medium text-[var(--theme-accent-fg,#fff)] disabled:opacity-50"
         >
           Chercher
         </button>
@@ -229,7 +229,7 @@ export function ScanClient({
           {results.map((client) => (
             <div
               key={client.id}
-              className="flex flex-col gap-3 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+              className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-[var(--theme-card,#fff)] p-5 text-[var(--theme-card-fg,#18181b)] dark:border-white/10"
             >
               <div>
                 <Link
@@ -254,7 +254,7 @@ export function ScanClient({
               <button
                 onClick={() => handleAddVisit(client)}
                 disabled={addingVisitId === client.id}
-                className="mt-2 rounded-full bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                className="mt-2 rounded-full bg-[var(--theme-accent,#059669)] px-4 py-3 text-sm font-medium text-[var(--theme-accent-fg,#fff)] transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {addingVisitId === client.id ? "..." : "Ajouter une visite"}
               </button>

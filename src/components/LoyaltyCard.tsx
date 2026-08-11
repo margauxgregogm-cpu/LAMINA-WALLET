@@ -1,22 +1,4 @@
-function hexToRgb(hex: string): [number, number, number] {
-  const clean = hex.replace("#", "");
-  const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
-  const num = parseInt(full, 16);
-  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
-}
-
-function relativeLuminance([r, g, b]: [number, number, number]): number {
-  const lin = [r, g, b].map((v) => {
-    const c = v / 255;
-    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  });
-  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
-}
-
-function darken([r, g, b]: [number, number, number], amount: number): string {
-  const d = (v: number) => Math.max(0, Math.round(v * (1 - amount)));
-  return `rgb(${d(r)}, ${d(g)}, ${d(b)})`;
-}
+import { hexToRgb, relativeLuminance, darken } from "@/lib/color-contrast";
 
 export function LoyaltyCard({
   restaurantName,

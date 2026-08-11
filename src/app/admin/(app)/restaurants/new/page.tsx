@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin-auth";
-import { AdminNav } from "@/components/AdminNav";
-import { FormField, formInputClass, primaryButtonClass } from "@/components/FormField";
+import { FormField } from "@/components/FormField";
 import { ColorSwatchPicker } from "@/components/ColorSwatchPicker";
 import { SubmitButton } from "@/components/SubmitButton";
+import { adminInputClass, adminButtonClass } from "@/components/admin/adminFormClasses";
 import { BUSINESS_CATEGORIES } from "@/lib/business-categories";
 import { createRestaurant } from "../actions";
 
@@ -17,32 +17,32 @@ export default async function NewRestaurantPage({
   const { error } = await searchParams;
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-6 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
-      <AdminNav />
-
+    <div className="flex flex-1 flex-col items-center gap-6 px-4 py-8 md:py-12">
       <div className="w-full max-w-3xl">
-        <h1 className="mb-4 text-xl font-bold tracking-tight">Nouvelle entreprise</h1>
+        <h1 className="mb-4 text-2xl font-bold tracking-tight">Nouvelle entreprise</h1>
 
         {error && (
-          <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
-            {error}
-          </p>
+          <p className="mb-4 rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">{error}</p>
         )}
 
-        <form action={createRestaurant} encType="multipart/form-data">
+        <form
+          action={createRestaurant}
+          encType="multipart/form-data"
+          className="rounded-2xl border border-white/10 bg-zinc-900 p-6"
+        >
           <div className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
             <div className="space-y-4">
-              <h2 className="text-sm font-semibold text-zinc-500">Champs obligatoires</h2>
+              <h2 className="text-sm font-semibold text-zinc-400">Champs obligatoires</h2>
 
               <FormField label="Nom de l'entreprise">
-                <input name="name" required className={formInputClass} />
+                <input name="name" required className={adminInputClass} />
               </FormField>
 
               <FormField
                 label="Lien public (slug)"
                 hint="lettres minuscules, chiffres et tirets uniquement — ex: le-petit-bistro"
               >
-                <input name="slug" required pattern="[a-z0-9-]+" className={formInputClass} />
+                <input name="slug" required pattern="[a-z0-9-]+" className={adminInputClass} />
               </FormField>
 
               <FormField label="Nombre de passages pour la récompense">
@@ -52,37 +52,31 @@ export default async function NewRestaurantPage({
                   min={1}
                   defaultValue={8}
                   required
-                  className={formInputClass}
+                  className={adminInputClass}
                 />
               </FormField>
 
               <FormField label="Texte de la récompense" hint='ex: "8e offert"'>
-                <input name="rewardText" required className={formInputClass} />
+                <input name="rewardText" required className={adminInputClass} />
               </FormField>
 
-              <hr className="border-zinc-200 dark:border-zinc-800" />
-              <p className="text-sm font-medium">Connexion pour l&apos;entreprise</p>
+              <hr className="border-white/10" />
+              <p className="text-sm font-medium text-zinc-100">Connexion pour l&apos;entreprise</p>
 
               <FormField label="Email de connexion">
-                <input name="loginEmail" type="email" required className={formInputClass} />
+                <input name="loginEmail" type="email" required className={adminInputClass} />
               </FormField>
 
               <FormField label="Mot de passe">
-                <input
-                  name="loginPassword"
-                  type="text"
-                  required
-                  minLength={8}
-                  className={formInputClass}
-                />
+                <input name="loginPassword" type="text" required minLength={8} className={adminInputClass} />
               </FormField>
             </div>
 
             <div className="space-y-4">
-              <h2 className="text-sm font-semibold text-zinc-500">Champs optionnels</h2>
+              <h2 className="text-sm font-semibold text-zinc-400">Champs optionnels</h2>
 
               <FormField label="Catégorie">
-                <select name="category" defaultValue="" className={formInputClass}>
+                <select name="category" defaultValue="" className={adminInputClass}>
                   <option value="">Choisir une catégorie...</option>
                   {BUSINESS_CATEGORIES.map((c) => (
                     <option key={c} value={c}>
@@ -99,12 +93,31 @@ export default async function NewRestaurantPage({
                 <ColorSwatchPicker name="backgroundColor" defaultValue="#27272a" />
               </FormField>
 
+              <hr className="border-white/10" />
+              <p className="text-sm font-medium text-zinc-100">Couleurs de l&apos;interface entreprise</p>
+              <p className="-mt-2 text-xs text-zinc-500">
+                Indépendantes de la couleur de la carte de fidélité ci-dessus — elles ne concernent que
+                l&apos;interface que voit le personnel du restaurant.
+              </p>
+
+              <FormField label="Couleur du thème de l'interface" hint="boutons, navigation active, accents">
+                <ColorSwatchPicker name="interfaceThemeColor" defaultValue="#059669" />
+              </FormField>
+
+              <FormField label="Couleur du texte de l'interface">
+                <ColorSwatchPicker name="interfaceTextColor" defaultValue="#18181b" />
+              </FormField>
+
+              <FormField label="Couleur des cartes d'indicateurs">
+                <ColorSwatchPicker name="interfaceCardColor" defaultValue="#ffffff" />
+              </FormField>
+
               <FormField label="Offre de bienvenue (optionnel)">
-                <input name="welcomeOfferText" className={formInputClass} />
+                <input name="welcomeOfferText" className={adminInputClass} />
               </FormField>
 
               <FormField label="Adresse (optionnel)">
-                <input name="address" className={formInputClass} />
+                <input name="address" className={adminInputClass} />
               </FormField>
 
               <FormField label="Logo (optionnel)">
@@ -112,7 +125,7 @@ export default async function NewRestaurantPage({
                   name="logo"
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
-                  className={formInputClass}
+                  className={adminInputClass}
                 />
               </FormField>
 
@@ -124,13 +137,13 @@ export default async function NewRestaurantPage({
                   name="backgroundImage"
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
-                  className={formInputClass}
+                  className={adminInputClass}
                 />
               </FormField>
             </div>
           </div>
 
-          <SubmitButton pendingChildren="Création..." className={`${primaryButtonClass} mt-6`}>
+          <SubmitButton pendingChildren="Création..." className={`${adminButtonClass} mt-6`}>
             Créer le restaurant
           </SubmitButton>
         </form>
