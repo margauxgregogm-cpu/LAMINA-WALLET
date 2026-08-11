@@ -154,7 +154,7 @@ export async function buildAppleWalletPass({
       formatVersion: 1,
       passTypeIdentifier: process.env.APPLE_WALLET_PASS_TYPE_IDENTIFIER!,
       teamIdentifier: process.env.APPLE_WALLET_TEAM_IDENTIFIER!,
-      organizationName: "Lamina Fidelity",
+      organizationName: restaurantName,
       serialNumber,
       description: `Carte de fidélité ${restaurantName}`,
       backgroundColor: hexToRgb(backgroundColor),
