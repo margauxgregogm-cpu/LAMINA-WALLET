@@ -33,7 +33,7 @@ export function RestaurantHeader({
   const initials = restaurantName.slice(0, 2).toUpperCase();
 
   return (
-    <header className="flex items-center gap-3 bg-[var(--theme-header-bg)] px-4 py-3 text-[var(--theme-header-fg)] md:gap-4 md:px-6">
+    <header className="sticky top-0 z-30 flex items-center gap-3 bg-[var(--theme-header-bg)] px-4 py-3 text-[var(--theme-header-fg)] md:gap-4 md:px-6">
       <div className="flex shrink-0 items-center gap-2 md:hidden">
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

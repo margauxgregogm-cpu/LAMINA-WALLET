@@ -22,7 +22,12 @@ export function RestaurantSidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="hidden shrink-0 flex-col bg-[var(--theme-sidebar-bg)] md:flex md:w-20 lg:w-64">
+    // sticky + a fixed h-screen (rather than stretching with the flex row)
+    // pins the sidebar to the viewport, so adding clients can no longer push
+    // "Besoin d'aide ?" and "Déconnexion" below the fold. self-start stops
+    // the row from stretching it back to full page height, which would
+    // disable sticky.
+    <aside className="sticky top-0 hidden h-screen shrink-0 flex-col self-start bg-[var(--theme-sidebar-bg)] md:flex md:w-20 lg:w-64">
       <div className="flex items-center gap-3 px-3 py-5 lg:px-5">
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
