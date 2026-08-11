@@ -5,9 +5,13 @@ import { renderStripImages } from "./apple-wallet-strip";
 import { authTokenFor } from "./apple-wallet-auth";
 import { supabaseAdmin } from "./supabase-admin";
 
-// Fixed production origin -- Apple's push service can't reach a local dev
-// server anyway, so there's no need for this to vary by environment.
-const SITE_URL = "https://lamina-wallet.vercel.app";
+// Apple requires webServiceURL to be a stable, publicly reachable host --
+// a per-deployment Vercel Preview URL changes on every push, so it can't be
+// used here. Defaults to the production domain; set APPLE_WALLET_SITE_URL
+// to override it, e.g. to a branch's stable Vercel alias
+// (lamina-wallet-git-<branch>-<team>.vercel.app) when testing Apple Wallet
+// registration/updates end-to-end from a Preview deployment.
+const SITE_URL = process.env.APPLE_WALLET_SITE_URL ?? "https://lamina-wallet.vercel.app";
 
 // Mirrors src/lib/google-wallet.ts's shape: an isConfigured() guard plus a
 // build function, so the UI can conditionally show the real button only
