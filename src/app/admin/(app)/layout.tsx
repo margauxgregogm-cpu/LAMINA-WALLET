@@ -9,9 +9,13 @@ export default async function AdminAppLayout({ children }: { children: React.Rea
   if (!(await isAdmin())) redirect("/admin/login");
 
   return (
-    <div className="flex min-h-screen w-full bg-zinc-950 text-zinc-100">
+    // Column below md so AdminSidebar's mobile top bar spans the full width
+    // above the content; a row from md up so the desktop sidebar sits beside
+    // it. Without flex-col the mobile bar became a narrow column next to the
+    // page instead of a header.
+    <div className="flex min-h-screen w-full flex-col bg-zinc-950 text-zinc-100 md:flex-row">
       <AdminSidebar />
-      <main className="min-h-screen flex-1 overflow-x-hidden">{children}</main>
+      <main className="min-w-0 flex-1 overflow-x-hidden">{children}</main>
     </div>
   );
 }
