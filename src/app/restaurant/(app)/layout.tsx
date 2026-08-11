@@ -1,9 +1,19 @@
+import type { Viewport } from "next";
 import { redirect } from "next/navigation";
 import { getAuthenticatedRestaurant } from "@/lib/restaurant-auth";
 import { pickForegroundColor, tint, shade, isLightColor } from "@/lib/color-contrast";
 import { RestaurantSidebar } from "@/components/restaurant/RestaurantSidebar";
 import { RestaurantHeader } from "@/components/restaurant/RestaurantHeader";
 import { RestaurantBottomNav } from "@/components/restaurant/RestaurantBottomNav";
+
+// Overrides the parent layout's static green themeColor so the installed
+// PWA's title bar (and the mobile browser chrome) takes each restaurant's
+// own interface colour instead of a fixed green band that clashes with the
+// themed header right below it.
+export async function generateViewport(): Promise<Viewport> {
+  const restaurant = await getAuthenticatedRestaurant();
+  return { themeColor: restaurant?.interface_theme_color ?? "#ffffff" };
+}
 
 // Route group (app) covers every authenticated /restaurant/** page --
 // /restaurant/login and the PWA-only routes (pwa-icon, icon.png) live

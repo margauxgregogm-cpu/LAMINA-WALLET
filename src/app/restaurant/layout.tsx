@@ -11,8 +11,11 @@ export const metadata: Metadata = {
   },
 };
 
+// Neutral by default (login and other pre-auth routes). Once signed in,
+// restaurant/(app)/layout.tsx overrides this with the restaurant's own
+// interface colour via generateViewport.
 export const viewport: Viewport = {
-  themeColor: "#059669",
+  themeColor: "#ffffff",
 };
 
 export default function RestaurantLayout({ children }: { children: React.ReactNode }) {
