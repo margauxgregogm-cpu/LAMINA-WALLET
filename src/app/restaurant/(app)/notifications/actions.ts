@@ -53,6 +53,22 @@ export async function sendPushNotification(formData: FormData) {
     fail("Vous avez utilisé toutes les notifications disponibles dans votre forfait.");
   }
 
+  // Put the message on the card BEFORE pushing, and wait for it: the push
+  // just tells devices "go re-fetch your pass", and the notification only
+  // appears if that re-fetch sees this field's value change (see migration
+  // 012_wallet_announcement.sql). Pushing first would race the write.
+  const { error: announceError } = await supabaseAdmin
+    .from("restaurants")
+    .update({ wallet_announcement: message })
+    .eq("id", restaurant.id);
+  if (announceError) {
+    // The send is already recorded and charged to the quota -- surfacing
+    // this as a failure would let the restaurant retry and spend a second
+    // notification for what the card will still pick up on its own next
+    // fetch. Log it and let the push attempt below carry the value again.
+    console.error("Failed to write wallet_announcement:", announceError);
+  }
+
   // Delivery is best-effort and non-blocking: the quota is already spent and
   // the send recorded, so a slow APNs round-trip must not hold up the form.
   // Reuses the existing Apple Wallet push path, which is already scoped to

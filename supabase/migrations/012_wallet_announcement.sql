@@ -1,0 +1,13 @@
+-- Lets a restaurant's push notification message actually show up on an
+-- already-installed Apple Wallet card.
+--
+-- Apple Wallet has no "send arbitrary text to a pass" API: a push is always
+-- silent (it only tells the device "go re-fetch your pass"). The only
+-- Apple-documented way to make iOS surface a real notification banner is to
+-- put the text in a pass field and give that field a `changeMessage`
+-- template -- iOS then displays the notification itself, using the field's
+-- new value, the moment it detects the value changed between two versions
+-- of the same pass. See src/lib/apple-wallet.ts (backFields "announcement")
+-- and src/app/restaurant/(app)/notifications/actions.ts, which writes this
+-- column right before triggering the existing Apple push.
+alter table restaurants add column if not exists wallet_announcement text;

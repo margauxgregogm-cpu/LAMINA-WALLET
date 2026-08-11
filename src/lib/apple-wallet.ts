@@ -84,6 +84,7 @@ export async function buildAppleWalletPass({
   clientName,
   stamps,
   logoUrl,
+  announcementMessage,
 }: {
   restaurantId: string;
   restaurantName: string;
@@ -95,6 +96,10 @@ export async function buildAppleWalletPass({
   clientName: string;
   stamps: number;
   logoUrl?: string | null;
+  /** Restaurant's latest push-notification message, if any -- see
+   * migration 012_wallet_announcement.sql for why this is what actually
+   * makes a notification appear on the card. */
+  announcementMessage?: string | null;
 }): Promise<Buffer> {
   if (!isAppleWalletConfigured()) {
     throw new Error("Apple Wallet is not configured");
@@ -164,6 +169,20 @@ export async function buildAppleWalletPass({
   // block below the image instead.
   pass.secondaryFields.push({ key: "reward", label: "RÉCOMPENSE", value: rewardText });
   pass.auxiliaryFields.push({ key: "member", label: "MEMBRE", value: clientName });
+
+  // Always present (even with a placeholder) so the very first real message
+  // is a value CHANGE on a field iOS already knows, not a field appearing
+  // out of nowhere -- Apple's notification-on-update behavior is documented
+  // for the former, not guaranteed for the latter. changeMessage's "%@" is
+  // replaced by the field's new value, so the notification banner shows
+  // exactly the restaurant's message text, nothing templated around it.
+  pass.backFields.push({
+    key: "announcement",
+    label: "ACTUALITÉ",
+    value: announcementMessage || "Aucune actualité pour le moment.",
+    changeMessage: "%@",
+  });
+
   pass.setBarcodes(clientId);
 
   return pass.getAsBuffer();
@@ -184,7 +203,9 @@ export async function buildAppleWalletPassForClient(clientId: string): Promise<
 
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
-    .select("name, background_color, background_image_url, stamps_required, reward_text, logo_url")
+    .select(
+      "name, background_color, background_image_url, stamps_required, reward_text, logo_url, wallet_announcement"
+    )
     .eq("id", client.restaurant_id)
     .single();
 
@@ -201,6 +222,7 @@ export async function buildAppleWalletPassForClient(clientId: string): Promise<
     clientName: client.first_name,
     stamps: client.stamps,
     logoUrl: restaurant.logo_url,
+    announcementMessage: restaurant.wallet_announcement,
   });
 
   return { pass, restaurantName: restaurant.name };
