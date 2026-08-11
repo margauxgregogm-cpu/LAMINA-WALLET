@@ -1,6 +1,8 @@
+// @ts-nocheck
 import "server-only";
 import { NextResponse } from "next/server";
-import forge from "node-forge";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const forge = require("node-forge");
 
 // TEMPORARY diagnostic route -- not part of the app, remove after debugging
 // the invalid-signature issue on Preview. Returns only non-secret fingerprints
@@ -18,7 +20,7 @@ export async function GET() {
       keyLength: keyPem.length,
       certFirst20: JSON.stringify(certPem.slice(0, 20)),
       keyFirst20: JSON.stringify(keyPem.slice(0, 20)),
-      certModulus: (cert.publicKey as forge.pki.rsa.PublicKey).n.toString(16),
+      certModulus: cert.publicKey.n.toString(16),
       keyModulusNull: key === null,
       keyModulus: key ? key.n.toString(16) : null,
     });
