@@ -160,7 +160,13 @@ export async function buildAppleWalletPass({
       backgroundColor: hexToRgb(backgroundColor),
       // Lets iOS register this pass for push updates -- see
       // apple-wallet-push.ts and the /api/apple-wallet/v1/* routes.
-      webServiceURL: `${SITE_URL}/api/apple-wallet/v1`,
+      //
+      // webServiceURL must be the bare base URL, ending in "/": per Apple's
+      // PassKit web service protocol, the device appends "v1/devices/..."
+      // itself. Including "/v1" here (as this used to) made the device
+      // build a URL with "v1" doubled up, which doesn't match any of our
+      // routes -- so it silently never registered for updates at all.
+      webServiceURL: `${SITE_URL}/api/apple-wallet/`,
       authenticationToken: authTokenFor(serialNumber),
     }
   );
