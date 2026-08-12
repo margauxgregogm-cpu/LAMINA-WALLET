@@ -3,8 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { logoutRestaurant } from "@/app/restaurant/login/actions";
-import { LogoutButton } from "@/components/LogoutButton";
 
 // Full-width themed bar: client search (submits to the Clients page, which
 // runs the same server-side search), a link to Notifications, and an account
@@ -110,13 +108,6 @@ export function RestaurantHeader({
             >
               Paramètres
             </Link>
-            <LogoutButton
-              action={logoutRestaurant}
-              variant="entreprise"
-              className="w-full px-4 py-2.5 text-left hover:bg-zinc-50"
-            >
-              Déconnexion
-            </LogoutButton>
           </div>
         )}
       </div>
