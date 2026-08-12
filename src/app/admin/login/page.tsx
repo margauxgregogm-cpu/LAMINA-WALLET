@@ -1,6 +1,7 @@
 import { loginAdmin } from "./actions";
 import { SubmitButton } from "@/components/SubmitButton";
 import { primaryButtonClass } from "@/components/FormField";
+import { PasswordInput } from "@/components/PasswordInput";
 
 export default async function AdminLoginPage({
   searchParams,
@@ -42,11 +43,12 @@ export default async function AdminLoginPage({
           <label htmlFor="password" className="mb-1 block text-sm font-medium">
             Mot de passe
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             required
+            autoComplete="current-password"
+            variant="entreprise"
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
           />
         </div>

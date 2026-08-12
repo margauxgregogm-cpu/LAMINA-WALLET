@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { after } from "next/server";
+import { randomUUID } from "node:crypto";
 import sharp from "sharp";
 import { requireAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
@@ -13,6 +14,19 @@ import { getPushPlan } from "@/lib/push-plans";
 // bypassed (JS-driven form fills, browsers that don't enforce it), so the
 // slug must be normalized server-side too — otherwise spaces/accents/etc.
 // end up in the public URL and QR code.
+function normalizeIdentifier(input: string): string {
+  return input.trim().toLowerCase();
+}
+
+// Supabase Auth still requires an email on every user under the hood, but
+// the entreprise login is now by identifier only -- this technical address
+// is never shown to the restaurant and never asked of the admin either, it
+// only exists to satisfy that internal requirement. Random, so it can never
+// collide with another restaurant's.
+function generateTechnicalEmail(): string {
+  return `${randomUUID()}@users.laminacards.internal`;
+}
+
 function slugify(input: string): string {
   return input
     .trim()
@@ -107,7 +121,7 @@ export async function createRestaurant(formData: FormData) {
   const rewardText = String(formData.get("rewardText") ?? "").trim();
   const welcomeOfferText = String(formData.get("welcomeOfferText") ?? "").trim();
   const address = String(formData.get("address") ?? "").trim();
-  const loginEmail = String(formData.get("loginEmail") ?? "").trim();
+  const loginIdentifier = String(formData.get("loginIdentifier") ?? "").trim();
   const loginPassword = String(formData.get("loginPassword") ?? "");
   // Entreprise-app interface theming — independent of backgroundColor above
   // (the loyalty card's own color, synced to Apple/Google Wallet). These 3
@@ -116,9 +130,21 @@ export async function createRestaurant(formData: FormData) {
   const interfaceTextColor = String(formData.get("interfaceTextColor") ?? "#18181b");
   const interfaceCardColor = String(formData.get("interfaceCardColor") ?? "#ffffff");
 
-  if (!name || !slug || !rewardText || !loginEmail || !loginPassword) {
+  if (!name || !slug || !rewardText || !loginIdentifier || !loginPassword) {
     return redirect(
       `/admin/restaurants/new?error=${encodeURIComponent("Champs obligatoires manquants.")}`
+    );
+  }
+
+  const { data: identifierClash } = await supabaseAdmin
+    .from("restaurants")
+    .select("id")
+    .eq("login_identifier_normalized", normalizeIdentifier(loginIdentifier))
+    .maybeSingle();
+
+  if (identifierClash) {
+    return redirect(
+      `/admin/restaurants/new?error=${encodeURIComponent("Cet identifiant de connexion est déjà utilisé.")}`
     );
   }
 
@@ -134,7 +160,7 @@ export async function createRestaurant(formData: FormData) {
   );
 
   const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-    email: loginEmail,
+    email: generateTechnicalEmail(),
     password: loginPassword,
     email_confirm: true,
   });
@@ -159,6 +185,7 @@ export async function createRestaurant(formData: FormData) {
       address: address || null,
       logo_url: logoUrl,
       user_id: authUser.user.id,
+      login_identifier: loginIdentifier,
       interface_theme_color: interfaceThemeColor,
       interface_text_color: interfaceTextColor,
       interface_card_color: interfaceCardColor,
@@ -310,6 +337,46 @@ export async function updateRestaurantOptions(formData: FormData) {
   // Deliberately does NOT bump updated_at or trigger the wallet sync: options
   // don't change the loyalty card, so there's no reason to re-push passes.
   redirect(`/admin/restaurants/${id}?optionsSaved=1`);
+}
+
+// Renaming the login identifier never touches the Supabase Auth user, its
+// email or its password -- it only writes the separate `login_identifier`
+// column that loginRestaurant() resolves at sign-in time.
+export async function updateRestaurantIdentifier(formData: FormData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") ?? "");
+  const loginIdentifier = String(formData.get("loginIdentifier") ?? "").trim();
+
+  if (!loginIdentifier) {
+    return redirect(
+      `/admin/restaurants/${id}?error=${encodeURIComponent("Identifiant requis.")}`
+    );
+  }
+
+  const { data: clash } = await supabaseAdmin
+    .from("restaurants")
+    .select("id")
+    .eq("login_identifier_normalized", normalizeIdentifier(loginIdentifier))
+    .neq("id", id)
+    .maybeSingle();
+
+  if (clash) {
+    return redirect(
+      `/admin/restaurants/${id}?error=${encodeURIComponent("Cet identifiant de connexion est déjà utilisé.")}`
+    );
+  }
+
+  const { error } = await supabaseAdmin
+    .from("restaurants")
+    .update({ login_identifier: loginIdentifier })
+    .eq("id", id);
+
+  if (error) {
+    return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/admin/restaurants/${id}?identifierUpdated=1`);
 }
 
 export async function resetRestaurantPassword(formData: FormData) {

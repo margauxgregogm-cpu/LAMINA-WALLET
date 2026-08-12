@@ -1,6 +1,8 @@
 import { loginRestaurant } from "./actions";
 import { SubmitButton } from "@/components/SubmitButton";
 import { primaryButtonClass } from "@/components/FormField";
+import { PasswordInput } from "@/components/PasswordInput";
+import { HelpButton } from "@/components/HelpButton";
 
 export default async function RestaurantLoginPage({
   searchParams,
@@ -26,13 +28,14 @@ export default async function RestaurantLoginPage({
 
       <form action={loginRestaurant} className="w-full max-w-sm space-y-4">
         <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-medium">
-            Email
+          <label htmlFor="identifier" className="mb-1 block text-sm font-medium">
+            Identifiant
           </label>
           <input
-            id="email"
-            name="email"
-            type="email"
+            id="identifier"
+            name="identifier"
+            type="text"
+            autoComplete="username"
             required
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
           />
@@ -42,11 +45,12 @@ export default async function RestaurantLoginPage({
           <label htmlFor="password" className="mb-1 block text-sm font-medium">
             Mot de passe
           </label>
-          <input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             required
+            autoComplete="current-password"
+            variant="entreprise"
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
           />
         </div>
@@ -58,6 +62,8 @@ export default async function RestaurantLoginPage({
           Se connecter
         </SubmitButton>
       </form>
+
+      <HelpButton />
     </div>
   );
 }

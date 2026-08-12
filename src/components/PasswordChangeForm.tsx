@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { FormField } from "@/components/FormField";
 import { SubmitButton } from "@/components/SubmitButton";
+import { PasswordInput } from "@/components/PasswordInput";
 import { ConfirmationModal, type ConfirmationModalVariant } from "@/components/ConfirmationModal";
 
 // Wraps the existing self-service password-change server action
@@ -47,12 +48,13 @@ export function PasswordChangeForm({
         className="space-y-4"
       >
         <FormField label="Nouveau mot de passe">
-          <input
+          <PasswordInput
             name="newPassword"
-            type="password"
             placeholder="6 caractères minimum"
             required
             minLength={6}
+            autoComplete="new-password"
+            variant={variant}
             className={inputClassName}
           />
         </FormField>
