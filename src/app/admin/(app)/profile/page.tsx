@@ -27,8 +27,15 @@ export default async function AdminProfilePage({
       </div>
 
       <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-zinc-900 p-6">
-        <h2 className="mb-3 text-sm font-semibold text-zinc-400">Identifiant / email de connexion</h2>
+        <h2 className="mb-3 text-sm font-semibold text-zinc-400">Email du compte</h2>
         <p className="text-lg font-medium text-zinc-100">{user?.email ?? "—"}</p>
+        <p className="mt-2 text-sm text-zinc-500">
+          Pour modifier votre identifiant de connexion, rendez-vous sur{" "}
+          <a href="/admin/admins" className="underline hover:text-zinc-300">
+            Comptes admin
+          </a>
+          .
+        </p>
       </div>
 
       <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-zinc-900 p-6">
