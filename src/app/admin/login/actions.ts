@@ -19,20 +19,30 @@ export async function loginAdmin(formData: FormData) {
   // actual, unchanged email -- signInWithPassword below still runs against
   // the exact same Auth user, password and session as before the identifier
   // existed. Mirrors loginRestaurant in restaurant/login/actions.ts.
-  const { data: admin } = await supabaseAdmin
+  const { data: admin, error: adminLookupError } = await supabaseAdmin
     .from("admins")
     .select("user_id")
     .eq("login_identifier_normalized", normalizedIdentifier)
     .maybeSingle();
 
+  if (adminLookupError) {
+    console.error("[admin-login-debug] admins lookup error:", adminLookupError.code, adminLookupError.message);
+  }
+
   if (!admin?.user_id) {
+    console.error("[admin-login-debug] no admin row for identifier");
     redirect(`/admin/login?error=${encodeURIComponent(INVALID_CREDENTIALS_ERROR)}`);
   }
 
-  const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(admin.user_id);
+  const { data: authUser, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(admin.user_id);
   const email = authUser?.user?.email;
 
+  if (authUserError) {
+    console.error("[admin-login-debug] getUserById error:", authUserError.code, authUserError.message);
+  }
+
   if (!email) {
+    console.error("[admin-login-debug] no email resolved");
     redirect(`/admin/login?error=${encodeURIComponent(INVALID_CREDENTIALS_ERROR)}`);
   }
 
@@ -40,6 +50,7 @@ export async function loginAdmin(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    console.error("[admin-login-debug] signInWithPassword error:", error.code, error.message);
     redirect(`/admin/login?error=${encodeURIComponent(INVALID_CREDENTIALS_ERROR)}`);
   }
 
