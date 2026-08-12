@@ -325,10 +325,33 @@ export async function updateRestaurantOptions(formData: FormData) {
     );
   }
 
-  const { error } = await supabaseAdmin
-    .from("restaurants")
-    .update({ push_notifications_enabled: pushEnabled, push_plan: pushPlan })
-    .eq("id", id);
+  const update: {
+    push_notifications_enabled: boolean;
+    push_plan: string | null;
+    push_custom_limit?: number;
+  } = { push_notifications_enabled: pushEnabled, push_plan: pushPlan };
+
+  // Option 4's quota isn't fixed like the others -- validated here (integer,
+  // > 0) rather than trusting the number input's client-side min/step, which
+  // a crafted request to this action could post around entirely. The
+  // column is only ever written when option4 is actually selected: switching
+  // to another plan intentionally leaves the last custom value in place, so
+  // it's still there pre-filled if the admin puts this restaurant back on
+  // option4 later.
+  if (pushPlan === "option4") {
+    const rawLimit = String(formData.get("pushCustomLimit") ?? "").trim();
+    const customLimit = Number(rawLimit);
+    if (!Number.isInteger(customLimit) || customLimit <= 0) {
+      return redirect(
+        `/admin/restaurants/${id}?error=${encodeURIComponent(
+          "Indiquez un nombre entier de notifications supérieur à 0 pour l'Option 4."
+        )}`
+      );
+    }
+    update.push_custom_limit = customLimit;
+  }
+
+  const { error } = await supabaseAdmin.from("restaurants").update(update).eq("id", id);
 
   if (error) {
     return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent(error.message)}`);

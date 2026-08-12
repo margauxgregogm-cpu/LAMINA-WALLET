@@ -37,20 +37,30 @@ const DISABLED: PushQuotaStatus = {
 export async function getPushQuotaStatus(restaurantId: string): Promise<PushQuotaStatus> {
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
-    .select("push_notifications_enabled, push_plan")
+    .select("push_notifications_enabled, push_plan, push_custom_limit")
     .eq("id", restaurantId)
     .single();
 
   if (!restaurant) return DISABLED;
 
-  const plan = getPushPlan(restaurant.push_plan);
+  const rawPlan = getPushPlan(restaurant.push_plan);
   const enabled = Boolean(restaurant.push_notifications_enabled);
 
   // An admin can leave a plan attached while switching the feature off; the
   // plan details stay visible but nothing can be sent.
-  if (!plan) {
+  if (!rawPlan) {
     return { ...DISABLED, enabled };
   }
+
+  // Option 4 has no fixed limit in PUSH_PLANS -- resolve it here, once, from
+  // the per-restaurant column, so the entreprise page, the admin fiche, and
+  // the send action's server-side quota check (which reads status.plan.limit)
+  // all agree on the same effective plan without each re-implementing this.
+  const limit = rawPlan.id === "option4" ? restaurant.push_custom_limit ?? 0 : rawPlan.limit;
+  const plan: PushPlan =
+    rawPlan.id === "option4"
+      ? { ...rawPlan, limit, description: `${limit} notification${limit > 1 ? "s" : ""} par mois` }
+      : rawPlan;
 
   const periodKey = currentPeriodKey(plan);
   const { count } = await supabaseAdmin
@@ -61,12 +71,12 @@ export async function getPushQuotaStatus(restaurantId: string): Promise<PushQuot
     .eq("status", "sent");
 
   const used = count ?? 0;
-  const remaining = Math.max(0, plan.limit - used);
+  const remaining = Math.max(0, limit - used);
 
   return {
     enabled,
     plan,
-    limit: plan.limit,
+    limit,
     used,
     remaining,
     periodKey,
