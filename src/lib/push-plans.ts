@@ -3,7 +3,7 @@
 // components (the entreprise page renders quota labels, the admin form
 // renders the plan picker).
 
-export type PushPlanId = "option1" | "option2" | "option3";
+export type PushPlanId = "option1" | "option2" | "option3" | "option4";
 
 export type PushPlan = {
   id: PushPlanId;
@@ -35,12 +35,25 @@ export const PUSH_PLANS: Record<PushPlanId, PushPlan> = {
     period: "month",
     description: "15 notifications par mois",
   },
+  option4: {
+    id: "option4",
+    label: "Option 4 — Personnalisée",
+    // Placeholder only: unlike the other plans, option4 has no fixed limit
+    // here. The real number is set per restaurant by an admin and stored on
+    // restaurants.push_custom_limit; getPushQuotaStatus (push-quota.ts)
+    // resolves it into a plan object with this limit/description replaced,
+    // and every caller uses that resolved plan, never this one directly.
+    limit: 0,
+    period: "month",
+    description: "Quota personnalisé défini par l'administrateur",
+  },
 };
 
 export const PUSH_PLAN_LIST: PushPlan[] = [
   PUSH_PLANS.option1,
   PUSH_PLANS.option2,
   PUSH_PLANS.option3,
+  PUSH_PLANS.option4,
 ];
 
 export function getPushPlan(planId: string | null | undefined): PushPlan | null {

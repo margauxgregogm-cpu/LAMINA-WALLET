@@ -4,7 +4,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 import { getPushQuotaStatus } from "@/lib/push-quota";
 import { describePeriod, formatRenewalDate } from "@/lib/push-plans";
 import { Panel } from "@/components/restaurant/Panel";
-import { PushMessageField } from "@/components/restaurant/PushMessageField";
+import { PushNotificationForm } from "@/components/restaurant/PushNotificationForm";
 import { sendPushNotification } from "./actions";
 
 function formatSentAt(iso: string): string {
@@ -109,9 +109,7 @@ export default async function NotificationsPage({
               </div>
             )}
 
-            <form action={sendPushNotification}>
-              <PushMessageField canSend={status.canSend} />
-            </form>
+            <PushNotificationForm action={sendPushNotification} canSend={status.canSend} />
           </Panel>
         </>
       )}

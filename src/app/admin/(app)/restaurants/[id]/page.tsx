@@ -16,7 +16,8 @@ import {
 } from "../actions";
 import { DeleteRestaurantButton } from "../DeleteRestaurantButton";
 import { getPushQuotaStatus } from "@/lib/push-quota";
-import { PUSH_PLAN_LIST, describePeriod, formatRenewalDate } from "@/lib/push-plans";
+import { describePeriod, formatRenewalDate } from "@/lib/push-plans";
+import { PushPlanFields } from "@/components/admin/PushPlanFields";
 
 export default async function EditRestaurantPage({
   params,
@@ -272,20 +273,10 @@ export default async function EditRestaurantPage({
                 Activer les notifications push
               </label>
 
-              <FormField label="Forfait attribué">
-                <select
-                  name="pushPlan"
-                  defaultValue={pushStatus.plan?.id ?? ""}
-                  className={adminInputClass}
-                >
-                  <option value="">Aucun forfait</option>
-                  {PUSH_PLAN_LIST.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.label} — {p.description}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
+              <PushPlanFields
+                defaultPlanId={pushStatus.plan?.id ?? ""}
+                defaultCustomLimit={restaurant.push_custom_limit}
+              />
 
               <SubmitButton pendingChildren="Enregistrement..." className={adminSecondaryButtonClass}>
                 Enregistrer les options
