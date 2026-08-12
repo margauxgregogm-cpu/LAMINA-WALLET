@@ -19,19 +19,18 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/restaurant", label: "Tableau de bord", icon: "dashboard" },
   { href: "/restaurant/scan", label: "Scanner", icon: "scan" },
   { href: "/restaurant/clients", label: "Clients", icon: "clients" },
-  { href: "/restaurant/visites", label: "Visites / Stats", icon: "stats" },
   { href: "/restaurant/vip", label: "VIP", icon: "vip" },
   { href: "/restaurant/notifications", label: "Notifications Push", icon: "notifications" },
   { href: "/restaurant/parametres", label: "Paramètres", icon: "settings" },
 ];
 
 // The 4 always-visible items in the mobile bottom bar -- everything else
-// (including Tableau de bord, VIP, Notifications, Paramètres if not listed
-// here, plus Aide/Déconnexion) lives in the "Plus" sheet so nothing on
-// desktop becomes unreachable on a phone.
+// (including Tableau de bord, VIP, Paramètres if not listed here, plus
+// Aide/Déconnexion) lives in the "Plus" sheet so nothing on desktop becomes
+// unreachable on a phone.
 export const MOBILE_PRIMARY_HREFS = [
   "/restaurant/scan",
   "/restaurant/clients",
-  "/restaurant/visites",
+  "/restaurant/notifications",
   "/restaurant/parametres",
 ];

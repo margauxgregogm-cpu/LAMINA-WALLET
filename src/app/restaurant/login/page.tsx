@@ -37,7 +37,7 @@ export default async function RestaurantLoginPage({
             type="text"
             autoComplete="username"
             required
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-[var(--theme-text,#18181b)] placeholder:text-[var(--theme-text,#18181b)]/40"
           />
         </div>
 
@@ -51,7 +51,7 @@ export default async function RestaurantLoginPage({
             required
             autoComplete="current-password"
             variant="entreprise"
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-[var(--theme-text,#18181b)] placeholder:text-[var(--theme-text,#18181b)]/40"
           />
         </div>
 

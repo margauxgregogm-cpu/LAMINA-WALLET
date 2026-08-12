@@ -102,7 +102,6 @@ export default async function RestaurantDashboardPage() {
           label="Visites ce mois-ci"
           value={visitsThisMonth}
           sublabel={visitsDeltaLabel}
-          href="/restaurant/visites"
         />
         <KpiTile
           icon="vip"

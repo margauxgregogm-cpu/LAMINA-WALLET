@@ -94,7 +94,7 @@ export function SearchClients({ initialQuery = "" }: { initialQuery?: string } =
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Rechercher un client (nom, email ou ville)"
-          className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm shadow-sm outline-none"
+          className="flex-1 rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm text-[var(--theme-text,#18181b)] placeholder:text-[var(--theme-text,#18181b)]/40 shadow-sm outline-none"
         />
         <button
           type="submit"

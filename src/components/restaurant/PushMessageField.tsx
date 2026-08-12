@@ -22,7 +22,7 @@ export function PushMessageField({ canSend }: { canSend: boolean }) {
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         placeholder="Ex : Profitez de -20 % sur votre prochaine visite cette semaine !"
-        className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm outline-none"
+        className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-[var(--theme-text,#18181b)] placeholder:text-[var(--theme-text,#18181b)]/40 outline-none"
       />
       <div className="mt-1 flex items-center justify-between text-xs">
         <span className={tooLong ? "text-red-600" : "opacity-50"}>

@@ -1,5 +1,5 @@
 export const formInputClass =
-  "w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900";
+  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-[var(--theme-text,#18181b)] placeholder:text-[var(--theme-text,#18181b)]/40";
 
 // Shared "metallic" primary button treatment — a gray gradient instead of a
 // flat fill, matching the landing page's look.

@@ -206,7 +206,7 @@ export function ScanClient({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Chercher un client (nom, email, ville ou ID)"
-          className="flex-1 rounded-lg border border-black/15 px-3 py-2 text-sm dark:border-white/15 dark:bg-zinc-900"
+          className="flex-1 rounded-lg border border-black/15 bg-white px-3 py-2 text-sm text-[var(--theme-text,#18181b)] placeholder:text-[var(--theme-text,#18181b)]/40"
         />
         <button
           type="submit"

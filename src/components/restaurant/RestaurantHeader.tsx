@@ -64,7 +64,7 @@ export function RestaurantHeader({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Rechercher un client (nom, email, ville)"
-          className="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-zinc-900 outline-none placeholder:text-zinc-400"
+          className="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-[var(--theme-text,#18181b)] outline-none placeholder:text-[var(--theme-text,#18181b)]/40"
         />
         <button
           type="submit"
