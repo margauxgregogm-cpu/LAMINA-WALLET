@@ -63,8 +63,11 @@ export default async function NewRestaurantPage({
               <hr className="border-white/10" />
               <p className="text-sm font-medium text-zinc-100">Connexion pour l&apos;entreprise</p>
 
-              <FormField label="Email de connexion">
-                <input name="loginEmail" type="email" required className={adminInputClass} />
+              <FormField
+                label="Identifiant de connexion"
+                hint="ce que l'entreprise saisira pour se connecter — aucune adresse email requise"
+              >
+                <input name="loginIdentifier" type="text" required className={adminInputClass} />
               </FormField>
 
               <FormField label="Mot de passe">

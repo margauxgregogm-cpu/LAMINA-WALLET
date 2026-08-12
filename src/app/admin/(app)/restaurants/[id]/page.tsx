@@ -8,7 +8,12 @@ import { ColorSwatchPicker } from "@/components/ColorSwatchPicker";
 import { SubmitButton } from "@/components/SubmitButton";
 import { adminInputClass, adminButtonClass, adminSecondaryButtonClass } from "@/components/admin/adminFormClasses";
 import { BUSINESS_CATEGORIES } from "@/lib/business-categories";
-import { updateRestaurant, resetRestaurantPassword, updateRestaurantOptions } from "../actions";
+import {
+  updateRestaurant,
+  resetRestaurantPassword,
+  updateRestaurantOptions,
+  updateRestaurantIdentifier,
+} from "../actions";
 import { DeleteRestaurantButton } from "../DeleteRestaurantButton";
 import { getPushQuotaStatus } from "@/lib/push-quota";
 import { PUSH_PLAN_LIST, describePeriod, formatRenewalDate } from "@/lib/push-plans";
@@ -23,12 +28,13 @@ export default async function EditRestaurantPage({
     saved?: string;
     passwordReset?: string;
     optionsSaved?: string;
+    identifierUpdated?: string;
   }>;
 }) {
   if (!(await isAdmin())) redirect("/admin/login");
 
   const { id } = await params;
-  const { error, saved, passwordReset, optionsSaved } = await searchParams;
+  const { error, saved, passwordReset, optionsSaved, identifierUpdated } = await searchParams;
   const pushStatus = await getPushQuotaStatus(id);
 
   const { data: restaurant } = await supabaseAdmin
@@ -38,12 +44,6 @@ export default async function EditRestaurantPage({
     .single();
 
   if (!restaurant) notFound();
-
-  let loginEmail: string | null = null;
-  if (restaurant.user_id) {
-    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(restaurant.user_id);
-    loginEmail = authUser?.user?.email ?? null;
-  }
 
   const headersList = await headers();
   const host = headersList.get("host");
@@ -55,7 +55,7 @@ export default async function EditRestaurantPage({
     <div className="flex flex-1 flex-col items-center gap-6 px-4 py-8 md:py-12">
       <div className="w-full max-w-3xl">
         <h1 className="text-2xl font-bold tracking-tight">{restaurant.name}</h1>
-        <p className="mb-4 text-sm text-zinc-400">{loginEmail ?? " "}</p>
+        <p className="mb-4 text-sm text-zinc-400">{restaurant.login_identifier ?? " "}</p>
 
         {saved && (
           <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
@@ -70,6 +70,11 @@ export default async function EditRestaurantPage({
         {optionsSaved && (
           <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
             Options mises à jour.
+          </p>
+        )}
+        {identifierUpdated && (
+          <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
+            Identifiant de connexion mis à jour.
           </p>
         )}
         {error && <p className="mb-4 rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">{error}</p>}
@@ -328,6 +333,22 @@ export default async function EditRestaurantPage({
               </div>
             </dl>
           </div>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900 p-6">
+          <h2 className="mb-3 text-sm font-semibold text-zinc-100">Identifiant de connexion</h2>
+          <form action={updateRestaurantIdentifier} className="flex gap-2">
+            <input type="hidden" name="id" value={restaurant.id} />
+            <input
+              name="loginIdentifier"
+              defaultValue={restaurant.login_identifier ?? ""}
+              required
+              className={adminInputClass}
+            />
+            <SubmitButton pendingChildren="..." className={adminSecondaryButtonClass}>
+              Enregistrer
+            </SubmitButton>
+          </form>
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900 p-6">

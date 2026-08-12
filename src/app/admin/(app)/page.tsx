@@ -17,16 +17,10 @@ export default async function AdminHomePage({
 
   const { data: allRestaurants } = await supabaseAdmin
     .from("restaurants")
-    .select("id, name, slug, stamps_required, category, user_id, logo_url")
+    .select("id, name, slug, stamps_required, category, user_id, logo_url, login_identifier")
     .order("name", { ascending: true });
 
   const { data: allClients } = await supabaseAdmin.from("clients").select("restaurant_id");
-
-  // The login email lives in Supabase Auth (restaurants.user_id -> auth
-  // user), not on the restaurants table itself -- one listUsers() call and
-  // a lookup map avoids an N+1 admin.getUserById() per restaurant.
-  const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
-  const emailByUserId = new Map(userList?.users.map((u) => [u.id, u.email]) ?? []);
 
   const clientCountByRestaurant = new Map<string, number>();
   for (const client of allClients ?? []) {
@@ -129,8 +123,8 @@ export default async function AdminHomePage({
                       )}
                       <div>
                         <div className="font-medium text-zinc-100">{r.name}</div>
-                        {r.user_id && emailByUserId.get(r.user_id) && (
-                          <div className="text-sm text-zinc-400">{emailByUserId.get(r.user_id)}</div>
+                        {r.login_identifier && (
+                          <div className="text-sm text-zinc-400">{r.login_identifier}</div>
                         )}
                       </div>
                     </div>
