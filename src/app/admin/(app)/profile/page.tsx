@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
 import { isAdmin } from "@/lib/admin-auth";
 import { createClient } from "@/lib/supabase-server";
-import { FormField } from "@/components/FormField";
-import { SubmitButton } from "@/components/SubmitButton";
 import { adminInputClass, adminButtonClass } from "@/components/admin/adminFormClasses";
+import { PasswordChangeForm } from "@/components/PasswordChangeForm";
 import { updateOwnAdminPassword } from "./actions";
 
 export default async function AdminProfilePage({
@@ -42,21 +41,12 @@ export default async function AdminProfilePage({
         )}
         {error && <p className="mb-4 rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">{error}</p>}
 
-        <form action={updateOwnAdminPassword} className="space-y-4">
-          <FormField label="Nouveau mot de passe">
-            <input
-              name="newPassword"
-              type="password"
-              placeholder="6 caractères minimum"
-              required
-              minLength={6}
-              className={adminInputClass}
-            />
-          </FormField>
-          <SubmitButton pendingChildren="Enregistrement..." className={adminButtonClass}>
-            Changer le mot de passe
-          </SubmitButton>
-        </form>
+        <PasswordChangeForm
+          action={updateOwnAdminPassword}
+          variant="admin"
+          inputClassName={adminInputClass}
+          buttonClassName={adminButtonClass}
+        />
       </div>
 
       <p className="w-full max-w-2xl text-sm text-zinc-500">

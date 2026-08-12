@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutRestaurant } from "@/app/restaurant/login/actions";
 import { HelpButton } from "@/components/HelpButton";
+import { LogoutButton } from "@/components/LogoutButton";
 import { NAV_ITEMS } from "./nav-items";
 import { NavIcon } from "./NavIcon";
 
@@ -73,14 +74,16 @@ export function RestaurantSidebar({
         <div className="hidden px-2 lg:block">
           <HelpButton direction="up" />
         </div>
-        <form action={logoutRestaurant}>
-          <button className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-3 text-sm font-semibold shadow-sm transition-colors hover:bg-white/70">
-            <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 shrink-0">
-              <path d="M6 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h5a1 1 0 1 0 0-2H7V5h4a1 1 0 1 0 0-2H6Zm8.3 4.3a1 1 0 0 0-1.4 1.4L14.6 10l-1.7 1.3a1 1 0 1 0 1.4 1.4l3-3a1 1 0 0 0 0-1.4l-3-3Z" />
-            </svg>
-            <span className="hidden lg:inline">Déconnexion</span>
-          </button>
-        </form>
+        <LogoutButton
+          action={logoutRestaurant}
+          variant="entreprise"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-3 text-sm font-semibold shadow-sm transition-colors hover:bg-white/70"
+        >
+          <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5 shrink-0">
+            <path d="M6 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h5a1 1 0 1 0 0-2H7V5h4a1 1 0 1 0 0-2H6Zm8.3 4.3a1 1 0 0 0-1.4 1.4L14.6 10l-1.7 1.3a1 1 0 1 0 1.4 1.4l3-3a1 1 0 0 0 0-1.4l-3-3Z" />
+          </svg>
+          <span className="hidden lg:inline">Déconnexion</span>
+        </LogoutButton>
       </div>
     </aside>
   );

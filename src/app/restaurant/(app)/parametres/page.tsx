@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { getAuthenticatedRestaurant } from "@/lib/restaurant-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { FormField, formInputClass, primaryButtonClass } from "@/components/FormField";
-import { SubmitButton } from "@/components/SubmitButton";
+import { formInputClass, primaryButtonClass } from "@/components/FormField";
 import { Panel } from "@/components/restaurant/Panel";
+import { PasswordChangeForm } from "@/components/PasswordChangeForm";
 import { updateOwnPassword } from "./actions";
 
 export default async function ParametresPage({
@@ -77,21 +77,12 @@ export default async function ParametresPage({
           </p>
         )}
 
-        <form action={updateOwnPassword} className="space-y-4">
-          <FormField label="Nouveau mot de passe">
-            <input
-              name="newPassword"
-              type="password"
-              placeholder="6 caractères minimum"
-              required
-              minLength={6}
-              className={formInputClass}
-            />
-          </FormField>
-          <SubmitButton pendingChildren="Enregistrement..." className={primaryButtonClass}>
-            Changer le mot de passe
-          </SubmitButton>
-        </form>
+        <PasswordChangeForm
+          action={updateOwnPassword}
+          variant="entreprise"
+          inputClassName={formInputClass}
+          buttonClassName={primaryButtonClass}
+        />
       </Panel>
     </div>
   );

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAdmin } from "@/app/admin/login/actions";
+import { LogoutButton } from "@/components/LogoutButton";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Entreprises" },
@@ -34,11 +35,13 @@ export function AdminSidebar() {
           </Link>
         );
       })}
-      <form action={logoutAdmin}>
-        <button className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-zinc-400 hover:bg-white/5 hover:text-zinc-100">
-          Déconnexion
-        </button>
-      </form>
+      <LogoutButton
+        action={logoutAdmin}
+        variant="admin"
+        className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-zinc-400 hover:bg-white/5 hover:text-zinc-100"
+      >
+        Déconnexion
+      </LogoutButton>
     </>
   );
 
