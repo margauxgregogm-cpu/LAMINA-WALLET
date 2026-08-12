@@ -27,13 +27,14 @@ export default async function AdminLoginPage({
 
       <form action={loginAdmin} className="w-full max-w-sm space-y-4">
         <div>
-          <label htmlFor="email" className="mb-1 block text-sm font-medium">
-            Email
+          <label htmlFor="identifier" className="mb-1 block text-sm font-medium">
+            Identifiant
           </label>
           <input
-            id="email"
-            name="email"
-            type="email"
+            id="identifier"
+            name="identifier"
+            type="text"
+            autoComplete="username"
             required
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
           />
