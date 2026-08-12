@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 export type ConfirmationModalVariant = "entreprise" | "admin";
 
@@ -40,6 +41,15 @@ export function ConfirmationModal({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  // Rendered via a portal straight onto <body> (below) rather than in place:
+  // callers mount this inside things like the sticky header (its own
+  // z-30 stacking context) or the mobile "more" sheet, so a plain in-tree
+  // z-[100] here still gets capped by that ancestor's stacking context and
+  // can end up painted behind unrelated same-page content (e.g. the QR
+  // scanner's video) that isn't inside that ancestor. Portaling to <body>
+  // escapes every ancestor's stacking context, matching how the page's
+  // other full-viewport overlays (e.g. the scan result overlay) already
+  // reliably paint above the scanner.
   useEffect(() => {
     if (!open) return;
     function onKeyDown(e: KeyboardEvent) {
@@ -49,11 +59,14 @@ export function ConfirmationModal({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [open, onCancel]);
 
+  // `open` only ever flips true after user interaction (all callers start
+  // it at false via useState), i.e. after hydration -- so document.body is
+  // always available by the time this branch runs; no mount-check needed.
   if (!open) return null;
 
   const isAdmin = variant === "admin";
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4"
       role="dialog"
@@ -91,6 +104,7 @@ export function ConfirmationModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
