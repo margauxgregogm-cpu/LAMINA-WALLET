@@ -51,7 +51,10 @@ export default async function RestaurantAppLayout({ children }: { children: Reac
   } as React.CSSProperties;
 
   return (
-    <div style={themeStyle} className="flex min-h-screen w-full text-[var(--theme-text)]">
+    <div
+      style={themeStyle}
+      className="animate-app-fade-in flex min-h-screen w-full text-[var(--theme-text)]"
+    >
       <LiveRestaurantSettings restaurantId={restaurant.id} />
       <RestaurantSidebar restaurantName={restaurant.name} logoUrl={restaurant.logo_url} />
       <div className="flex min-h-screen min-w-0 flex-1 flex-col">
