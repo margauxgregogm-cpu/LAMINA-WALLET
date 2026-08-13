@@ -10,6 +10,7 @@ import { computeVisitFrequency } from "@/lib/visit-frequency";
 import { Panel } from "@/components/restaurant/Panel";
 import { updateClient } from "../actions";
 import { DeleteClientButton } from "../DeleteClientButton";
+import { CommercialConsentToggle } from "../CommercialConsentToggle";
 
 export default async function ClientDetailPage({
   params,
@@ -179,6 +180,12 @@ export default async function ClientDetailPage({
               Enregistrer
             </SubmitButton>
           </form>
+
+          <hr className="my-8 border-black/10 dark:border-white/10" />
+
+          <Panel title="Marketing">
+            <CommercialConsentToggle id={client.id} consent={client.commercial_email_consent} />
+          </Panel>
 
           <hr className="my-8 border-black/10 dark:border-white/10" />
 

@@ -25,12 +25,18 @@ function Initials({ name }: { name: string }) {
   );
 }
 
-export default async function RestaurantDashboardPage() {
+export default async function RestaurantDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ exportEmpty?: string }>;
+}) {
   const restaurant = await getAuthenticatedRestaurant();
 
   if (!restaurant) {
     redirect("/restaurant/login?error=Aucun%20restaurant%20associé%20à%20ce%20compte");
   }
+
+  const { exportEmpty } = await searchParams;
 
   const headersList = await headers();
   const host = headersList.get("host");
@@ -80,12 +86,26 @@ export default async function RestaurantDashboardPage() {
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 md:px-6 md:py-6">
       <LiveDashboardUpdates restaurantId={restaurant.id} />
 
-      <div>
-        <h1 className="text-xl font-bold tracking-tight md:text-2xl">
-          Bonjour, {restaurant.name} 👋
-        </h1>
-        <p className="text-sm opacity-60">Voici votre activité aujourd&apos;hui.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight md:text-2xl">
+            Bonjour, {restaurant.name} 👋
+          </h1>
+          <p className="text-sm opacity-60">Voici votre activité aujourd&apos;hui.</p>
+        </div>
+        <a
+          href="/api/restaurant/export-commercial-emails"
+          className="shrink-0 rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-black/5"
+        >
+          Exporter les emails commerciaux
+        </a>
       </div>
+
+      {exportEmpty && (
+        <p className="rounded-lg bg-[var(--theme-accent-soft)] px-3 py-2 text-sm">
+          Aucun client n&apos;a accepté de recevoir des emails commerciaux pour le moment.
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-3 md:gap-4">
         <KpiTile

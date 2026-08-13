@@ -6,9 +6,9 @@ import { SignupForm } from "./SignupForm";
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ r?: string }>;
+  searchParams: Promise<{ r?: string; error?: string }>;
 }) {
-  const { r: slug } = await searchParams;
+  const { r: slug, error } = await searchParams;
 
   if (!slug) notFound();
 
@@ -43,7 +43,7 @@ export default async function SignupPage({
         </p>
       )}
 
-      <SignupForm restaurantId={restaurant.id} restaurantSlug={restaurant.slug} />
+      <SignupForm restaurantId={restaurant.id} restaurantSlug={restaurant.slug} error={error} />
     </div>
   );
 }
