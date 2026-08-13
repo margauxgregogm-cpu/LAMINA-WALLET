@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect, useRef } from "react";
 import Link from "next/link";
-import { searchClients, toggleVip } from "../actions";
+import { searchClients } from "../actions";
 import { recordVisit } from "./scan/actions";
 import { formatRelativeDate } from "@/lib/format-relative-date";
 
@@ -14,7 +14,6 @@ type Client = {
   city: string | null;
   stamps: number;
   total_visits: number;
-  is_vip: boolean;
   last_visit_at: string | null;
 };
 
@@ -46,15 +45,6 @@ export function SearchClients({ initialQuery = "" }: { initialQuery?: string } =
     runSearch(initialQuery);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
-
-  function handleToggleVip(client: Client) {
-    const next = !client.is_vip;
-    // optimistic — flip immediately, revert if the save fails
-    setResults((prev) => prev.map((c) => (c.id === client.id ? { ...c, is_vip: next } : c)));
-    toggleVip(client.id, next).catch(() => {
-      setResults((prev) => prev.map((c) => (c.id === client.id ? { ...c, is_vip: !next } : c)));
-    });
-  }
 
   async function handleAddVisit(client: Client) {
     setAddingVisitId(client.id);
@@ -115,25 +105,17 @@ export function SearchClients({ initialQuery = "" }: { initialQuery?: string } =
               key={client.id}
               className="flex flex-col gap-2 rounded-2xl border border-black/5 bg-[var(--theme-card,#fff)] p-4 text-[var(--theme-card-fg,#18181b)] shadow-sm"
             >
-              <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0">
-                  <Link
-                    href={`/restaurant/clients/${client.id}`}
-                    className="font-semibold underline-offset-2 hover:underline"
-                  >
-                    {client.first_name} {client.last_name} {client.is_vip && <span title="VIP">⭐</span>}
-                  </Link>
-                  <div className="truncate text-sm opacity-60">
-                    {client.email}
-                    {client.city ? ` · ${client.city}` : ""}
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleToggleVip(client)}
-                  className="shrink-0 rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-black/5"
+              <div className="min-w-0">
+                <Link
+                  href={`/restaurant/clients/${client.id}`}
+                  className="font-semibold underline-offset-2 hover:underline"
                 >
-                  {client.is_vip ? "Retirer VIP" : "Marquer VIP"}
-                </button>
+                  {client.first_name} {client.last_name}
+                </Link>
+                <div className="truncate text-sm opacity-60">
+                  {client.email}
+                  {client.city ? ` · ${client.city}` : ""}
+                </div>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm opacity-70">

@@ -10,7 +10,6 @@ import { computeVisitFrequency } from "@/lib/visit-frequency";
 import { Panel } from "@/components/restaurant/Panel";
 import { updateClient } from "../actions";
 import { DeleteClientButton } from "../DeleteClientButton";
-import { VipToggle } from "../VipToggle";
 
 export default async function ClientDetailPage({
   params,
@@ -96,9 +95,6 @@ export default async function ClientDetailPage({
                 <div className="text-lg font-semibold">{formatRelativeDate(client.last_visit_at)}</div>
                 <div className="text-xs text-[var(--theme-card-fg,#18181b)]/60">Dernière visite</div>
               </div>
-            </div>
-            <div className="mt-4 flex justify-center">
-              <VipToggle clientId={client.id} initialIsVip={client.is_vip} />
             </div>
           </Panel>
 

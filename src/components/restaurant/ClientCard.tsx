@@ -10,16 +10,15 @@ type Client = {
   city: string | null;
   stamps: number;
   total_visits: number;
-  is_vip: boolean;
   last_visit_at: string | null;
 };
 
-// Presentational-only client card for the new Clients/VIP list pages.
-// Deliberately NOT reused by SearchClients.tsx or ScanClient.tsx -- those
-// already have their own working stateful card markup (VIP toggle,
-// add-visit, optimistic updates, inline error/outcome messages) and
-// restyling them in place carries lower regression risk than threading
-// all that state through a shared component under a redesign.
+// Presentational-only client card for the Clients list page. Deliberately
+// NOT reused by SearchClients.tsx or ScanClient.tsx -- those already have
+// their own working stateful card markup (add-visit, optimistic updates,
+// inline error/outcome messages) and restyling them in place carries lower
+// regression risk than threading all that state through a shared component
+// under a redesign.
 export function ClientCard({ client }: { client: Client }) {
   return (
     <Panel className="flex flex-col gap-2">
@@ -28,7 +27,7 @@ export function ClientCard({ client }: { client: Client }) {
           href={`/restaurant/clients/${client.id}`}
           className="font-semibold underline-offset-2 hover:underline"
         >
-          {client.first_name} {client.last_name} {client.is_vip && <span title="VIP">⭐</span>}
+          {client.first_name} {client.last_name}
         </Link>
         <div className="text-sm text-[var(--theme-card-fg,#18181b)]/70">
           {client.email}

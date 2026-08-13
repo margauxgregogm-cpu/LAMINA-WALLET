@@ -14,15 +14,6 @@ export async function getClientsCount(restaurantId: string): Promise<number> {
   return count ?? 0;
 }
 
-export async function getVipCount(restaurantId: string): Promise<number> {
-  const { count } = await supabaseAdmin
-    .from("clients")
-    .select("id", { count: "exact", head: true })
-    .eq("restaurant_id", restaurantId)
-    .eq("is_vip", true);
-  return count ?? 0;
-}
-
 export async function getVisitsCountInRange(
   restaurantId: string,
   from: Date,

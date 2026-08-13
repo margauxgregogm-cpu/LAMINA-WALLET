@@ -16,7 +16,6 @@ type Client = {
   city: string | null;
   stamps: number;
   total_visits: number;
-  is_vip: boolean;
   last_visit_at: string | null;
 };
 
@@ -236,7 +235,7 @@ export function ScanClient({
                   href={`/restaurant/clients/${client.id}`}
                   className="text-lg font-semibold underline-offset-2 hover:underline"
                 >
-                  {client.first_name} {client.last_name} {client.is_vip && <span title="VIP">⭐</span>}
+                  {client.first_name} {client.last_name}
                 </Link>
                 <div className="text-sm text-zinc-500">
                   {client.email}
