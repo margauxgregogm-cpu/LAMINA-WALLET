@@ -33,6 +33,43 @@ function getApnsProviderToken(): string {
 
 type PushResult = { outcome: "ok" | "gone" | "error"; status: number; detail?: string };
 
+// Apple explicitly warns against opening a fresh connection per push
+// ("repeatedly opening and closing connections to APNs" can get a provider
+// throttled/deprioritized -- https://developer.apple.com/documentation/usernotifications/setting-up-a-remote-notification-server,
+// "Establish a persistent connection"). The previous version of this file
+// called http2.connect() and client.close() on every single sendPush(),
+// including once per registered device inside the same Promise.all -- i.e.
+// N brand-new connections for N devices on every save, and another N next
+// time. That matches this project's own symptom report almost exactly:
+// pushes appearing to queue up and only deliver in a burst once something
+// else (a new client's own pass creation) touched Apple's servers again.
+//
+// One HTTP/2 session is now opened lazily and reused across every push in
+// this process (HTTP/2 multiplexes many concurrent streams over a single
+// connection natively, which is exactly what Apple recommends instead).
+// It's only replaced if it errors or the remote end closes it.
+let cachedSession: http2.ClientHttp2Session | null = null;
+
+function getApnsSession(): http2.ClientHttp2Session {
+  if (cachedSession && !cachedSession.closed && !cachedSession.destroyed) {
+    return cachedSession;
+  }
+  const session = http2.connect("https://api.push.apple.com:443");
+  session.on("error", () => {
+    if (cachedSession === session) cachedSession = null;
+  });
+  session.on("close", () => {
+    if (cachedSession === session) cachedSession = null;
+  });
+  // Serverless functions get frozen between invocations -- an open socket
+  // must not keep the process alive waiting for more work that never comes.
+  session.unref();
+  cachedSession = session;
+  return session;
+}
+
+const REQUEST_TIMEOUT_MS = 10_000;
+
 // Sends a silent "your pass changed" push. Returns "gone" if Apple says the
 // token is no longer valid (user removed the pass, reinstalled the OS,
 // etc.) so the caller can drop the stale registration.
@@ -44,12 +81,31 @@ type PushResult = { outcome: "ok" | "gone" | "error"; status: number; detail?: s
 // (anything that isn't 200/410/400) was swallowed with zero logging, so an
 // intermittent APNs rejection (bad/expired provider token, rate limiting,
 // network blip) looked identical to "nothing went wrong" from the outside.
+//
+// Also now has an explicit timeout: without one, a stream that never emits
+// "response"/"end"/"error" (Apple hangs, or a network middlebox drops the
+// packet silently) left this Promise permanently unresolved -- meaning the
+// Promise.all in pushToRegistrations, and the after() callback awaiting it,
+// could hang indefinitely and never reach the summary log below, an
+// on-server failure mode indistinguishable from "nothing happened" from
+// the outside, exactly like the reported symptom.
 function sendPush(pushToken: string, passTypeIdentifier: string): Promise<PushResult> {
   return new Promise((resolve) => {
-    const client = http2.connect("https://api.push.apple.com:443");
-    client.on("error", (err) => resolve({ outcome: "error", status: 0, detail: String(err) }));
+    let settled = false;
+    const finish = (result: PushResult) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(result);
+    };
 
-    const req = client.request({
+    const timer = setTimeout(() => {
+      req.close();
+      finish({ outcome: "error", status: 0, detail: "timed out waiting for APNs response" });
+    }, REQUEST_TIMEOUT_MS);
+
+    const session = getApnsSession();
+    const req = session.request({
       ":method": "POST",
       ":path": `/3/device/${pushToken}`,
       authorization: `bearer ${getApnsProviderToken()}`,
@@ -68,14 +124,12 @@ function sendPush(pushToken: string, passTypeIdentifier: string): Promise<PushRe
       body += chunk;
     });
     req.on("end", () => {
-      client.close();
-      if (status === 200) resolve({ outcome: "ok", status });
-      else if (status === 410 || status === 400) resolve({ outcome: "gone", status, detail: body });
-      else resolve({ outcome: "error", status, detail: body });
+      if (status === 200) finish({ outcome: "ok", status });
+      else if (status === 410 || status === 400) finish({ outcome: "gone", status, detail: body });
+      else finish({ outcome: "error", status, detail: body });
     });
     req.on("error", (err) => {
-      client.close();
-      resolve({ outcome: "error", status: 0, detail: String(err) });
+      finish({ outcome: "error", status: 0, detail: String(err) });
     });
 
     req.end(JSON.stringify({}));
