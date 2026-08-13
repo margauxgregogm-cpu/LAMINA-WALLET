@@ -12,7 +12,11 @@ import { MoreMenuSheet } from "./MoreMenuSheet";
 export function RestaurantBottomNav() {
   const pathname = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
-  const primaryItems = NAV_ITEMS.filter((item) => MOBILE_PRIMARY_HREFS.includes(item.href));
+  // Ordered by MOBILE_PRIMARY_HREFS (not NAV_ITEMS) so the bar's slot order
+  // is controlled independently of the desktop sidebar's order.
+  const primaryItems = MOBILE_PRIMARY_HREFS.map((href) => NAV_ITEMS.find((item) => item.href === href)).filter(
+    (item) => item !== undefined
+  );
 
   return (
     <>

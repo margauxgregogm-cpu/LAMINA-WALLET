@@ -18,7 +18,7 @@ export default async function ClientsPage({
 
   const { data: clients } = await supabaseAdmin
     .from("clients")
-    .select("id, first_name, last_name, email, city, stamps, total_visits, is_vip, last_visit_at")
+    .select("id, first_name, last_name, email, city, stamps, total_visits, last_visit_at")
     .eq("restaurant_id", restaurant.id)
     .order("first_name")
     .limit(50);

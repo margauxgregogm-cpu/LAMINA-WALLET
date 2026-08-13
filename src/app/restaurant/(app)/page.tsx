@@ -4,7 +4,7 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { getAuthenticatedRestaurant } from "@/lib/restaurant-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { getClientsCount, getVipCount, getVisitsCountInRange, startOfMonth } from "@/lib/restaurant-stats";
+import { getClientsCount, getVisitsCountInRange, startOfMonth } from "@/lib/restaurant-stats";
 import { formatRelativeDate, formatTime } from "@/lib/format-relative-date";
 import { Panel } from "@/components/restaurant/Panel";
 import { KpiTile } from "@/components/restaurant/KpiTile";
@@ -49,13 +49,12 @@ export default async function RestaurantDashboardPage() {
     { data: recentClients },
     qrDataUrl,
     clientsCount,
-    vipCount,
     visitsThisMonth,
     visitsLastMonth,
   ] = await Promise.all([
     supabaseAdmin
       .from("clients")
-      .select("id, first_name, last_name, total_visits, last_visit_at, is_vip")
+      .select("id, first_name, last_name, total_visits, last_visit_at")
       .eq("restaurant_id", restaurant.id)
       .order("total_visits", { ascending: false })
       .limit(5),
@@ -67,7 +66,6 @@ export default async function RestaurantDashboardPage() {
       .limit(5),
     QRCode.toDataURL(publicUrl, { width: 220, margin: 1 }),
     getClientsCount(restaurant.id),
-    getVipCount(restaurant.id),
     getVisitsCountInRange(restaurant.id, thisMonthStart),
     getVisitsCountInRange(restaurant.id, lastMonthStart, thisMonthStart),
   ]);
@@ -89,7 +87,7 @@ export default async function RestaurantDashboardPage() {
         <p className="text-sm opacity-60">Voici votre activité aujourd&apos;hui.</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4">
         <KpiTile
           icon="clients"
           label="Clients"
@@ -102,13 +100,6 @@ export default async function RestaurantDashboardPage() {
           label="Visites ce mois-ci"
           value={visitsThisMonth}
           sublabel={visitsDeltaLabel}
-        />
-        <KpiTile
-          icon="vip"
-          label="VIP"
-          value={vipCount}
-          sublabel="Clients VIP"
-          href="/restaurant/vip"
         />
       </div>
 
@@ -151,7 +142,6 @@ export default async function RestaurantDashboardPage() {
                       <th className="px-2 py-2 font-semibold">Client</th>
                       <th className="px-2 py-2 font-semibold">Visites</th>
                       <th className="px-2 py-2 font-semibold">Dernière visite</th>
-                      <th className="px-2 py-2 font-semibold">VIP</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -171,7 +161,6 @@ export default async function RestaurantDashboardPage() {
                           </td>
                           <td className="px-2 py-3">{client.total_visits}</td>
                           <td className="px-2 py-3">{formatRelativeDate(client.last_visit_at)}</td>
-                          <td className="px-2 py-3">{client.is_vip ? "⭐" : "—"}</td>
                         </tr>
                       );
                     })}

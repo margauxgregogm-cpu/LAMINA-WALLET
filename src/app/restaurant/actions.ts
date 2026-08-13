@@ -17,7 +17,7 @@ export async function searchClients(query: string) {
   if (UUID_PATTERN.test(trimmed)) {
     const { data } = await supabaseAdmin
       .from("clients")
-      .select("id, first_name, last_name, email, city, stamps, total_visits, is_vip, last_visit_at")
+      .select("id, first_name, last_name, email, city, stamps, total_visits, last_visit_at")
       .eq("restaurant_id", restaurant.id)
       .eq("id", trimmed)
       .limit(1);
@@ -32,7 +32,7 @@ export async function searchClients(query: string) {
 
   const { data } = await supabaseAdmin
     .from("clients")
-    .select("id, first_name, last_name, email, city, stamps, total_visits, is_vip, last_visit_at")
+    .select("id, first_name, last_name, email, city, stamps, total_visits, last_visit_at")
     .eq("restaurant_id", restaurant.id)
     .or(
       `first_name.ilike.%${sanitized}%,last_name.ilike.%${sanitized}%,email.ilike.%${sanitized}%,city.ilike.%${sanitized}%`
@@ -41,14 +41,4 @@ export async function searchClients(query: string) {
     .limit(20);
 
   return data ?? [];
-}
-
-export async function toggleVip(clientId: string, isVip: boolean) {
-  const restaurant = await requireAuthenticatedRestaurant();
-
-  await supabaseAdmin
-    .from("clients")
-    .update({ is_vip: isVip })
-    .eq("id", clientId)
-    .eq("restaurant_id", restaurant.id);
 }
