@@ -2,7 +2,7 @@
   "name": "Lamina Fidelity — Entreprise",
   "short_name": "Lamina Ent.",
   "description": "Scanner les cartes de fidélité et gérer les visites clients",
-  "start_url": "/restaurant/scan",
+  "start_url": "/restaurant/launch",
   "scope": "/restaurant",
   "display": "standalone",
   "background_color": "#ffffff",
