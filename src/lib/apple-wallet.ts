@@ -165,6 +165,16 @@ export async function buildAppleWalletPass({
       teamIdentifier: process.env.APPLE_WALLET_TEAM_IDENTIFIER!,
       organizationName: restaurantName,
       serialNumber,
+      // Every restaurant shares the same passTypeIdentifier/certificate (see
+      // isAppleWalletConfigured above), so this is the only signal that
+      // tells Apple Wallet which cards belong to the same business --
+      // without it, all LAMINA cards are indistinguishable from Wallet's
+      // point of view beyond the serialNumber. Stable and unique per
+      // restaurant (independent of organizationName, which can change),
+      // never touches serialNumber/authenticationToken, so existing
+      // installed passes just pick this field up on their next normal
+      // fetch/update like any other pass.json change.
+      groupingIdentifier: restaurantId,
       description: `Carte de fidélité ${restaurantName}`,
       backgroundColor: hexToRgb(backgroundColor),
       ...(walletTextColor
