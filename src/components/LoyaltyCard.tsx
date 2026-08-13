@@ -10,6 +10,7 @@ export function LoyaltyCard({
   memberName,
   backgroundColor = "#27272a",
   backgroundImageUrl,
+  textColor,
 }: {
   restaurantName: string;
   logoInitials: string;
@@ -20,6 +21,14 @@ export function LoyaltyCard({
   memberName: string;
   backgroundColor?: string;
   backgroundImageUrl?: string | null;
+  /** Mirrors the Apple Wallet pass's foregroundColor/labelColor (see
+   * migration 016_wallet_text_color.sql) so this web preview matches what
+   * the customer actually gets. Only overrides the reward text, member
+   * name, and stamp progress ("3/10") plus their captions -- restaurant
+   * name and the stamp circles keep their normal auto-contrast/fixed
+   * colors regardless. Omitted (not defaulted here) when unset, so
+   * restaurants without a configured color render exactly as before. */
+  textColor?: string | null;
 }) {
   const stamps = Array.from({ length: stampsRequired }, (_, i) => i < stampsEarned);
   const hasImage = Boolean(backgroundImageUrl);
@@ -71,10 +80,13 @@ export function LoyaltyCard({
           </div>
         </div>
         <div className="text-right">
-          <div className={`text-xs uppercase tracking-wide ${subtext}`}>
+          <div
+            className={`text-xs uppercase tracking-wide ${textColor ? "" : subtext}`}
+            style={textColor ? { color: textColor } : undefined}
+          >
             Tampons
           </div>
-          <div className="text-xl font-semibold">
+          <div className="text-xl font-semibold" style={textColor ? { color: textColor } : undefined}>
             {stampsEarned} / {stampsRequired}
           </div>
         </div>
@@ -105,16 +117,26 @@ export function LoyaltyCard({
 
       <div className="mt-8 flex items-end justify-between">
         <div>
-          <div className={`text-xs uppercase tracking-wide ${subtext}`}>
+          <div
+            className={`text-xs uppercase tracking-wide ${textColor ? "" : subtext}`}
+            style={textColor ? { color: textColor } : undefined}
+          >
             Récompense
           </div>
-          <div className="font-semibold">{rewardText}</div>
+          <div className="font-semibold" style={textColor ? { color: textColor } : undefined}>
+            {rewardText}
+          </div>
         </div>
         <div className="text-right">
-          <div className={`text-xs uppercase tracking-wide ${subtext}`}>
+          <div
+            className={`text-xs uppercase tracking-wide ${textColor ? "" : subtext}`}
+            style={textColor ? { color: textColor } : undefined}
+          >
             Membre
           </div>
-          <div className="font-semibold">{memberName}</div>
+          <div className="font-semibold" style={textColor ? { color: textColor } : undefined}>
+            {memberName}
+          </div>
         </div>
       </div>
     </div>

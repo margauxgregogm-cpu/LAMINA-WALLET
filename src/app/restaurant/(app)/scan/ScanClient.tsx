@@ -35,11 +35,13 @@ export function ScanClient({
   logoUrl,
   backgroundColor,
   backgroundImageUrl,
+  walletTextColor,
 }: {
   restaurantName: string;
   logoUrl: string | null;
   backgroundColor: string;
   backgroundImageUrl: string | null;
+  walletTextColor: string | null;
 }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Client[]>([]);
@@ -309,6 +311,7 @@ export function ScanClient({
               memberName={overlayResult.clientFullName}
               backgroundColor={backgroundColor}
               backgroundImageUrl={backgroundImageUrl}
+              textColor={walletTextColor}
             />
 
             <p className="text-sm text-white/80">Cliquez n&apos;importe où pour continuer</p>

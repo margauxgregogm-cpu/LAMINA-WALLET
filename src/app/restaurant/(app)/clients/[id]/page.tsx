@@ -69,6 +69,7 @@ export default async function ClientDetailPage({
             memberName={fullName}
             backgroundColor={restaurant.background_color}
             backgroundImageUrl={restaurant.background_image_url}
+            textColor={restaurant.wallet_text_color}
           />
 
           <p className="text-center text-sm text-[var(--theme-text)]/60">

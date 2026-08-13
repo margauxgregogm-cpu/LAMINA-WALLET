@@ -17,6 +17,7 @@ export default async function ScanPage() {
         logoUrl={restaurant.logo_url}
         backgroundColor={restaurant.background_color}
         backgroundImageUrl={restaurant.background_image_url}
+        walletTextColor={restaurant.wallet_text_color}
       />
     </div>
   );
