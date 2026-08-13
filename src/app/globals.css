@@ -47,3 +47,34 @@ textarea,
 select {
   font-size: 16px;
 }
+
+/* Restaurant splash screen (src/app/restaurant/loading.tsx): 3 dots
+   pulsing in sequence, and the fade-in the real interface uses once it
+   replaces the splash, so the handoff doesn't feel like a hard cut. */
+@keyframes splash-dot-pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+.animate-splash-dot {
+  animation: splash-dot-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes app-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-app-fade-in {
+  animation: app-fade-in 0.25s ease-out;
+}

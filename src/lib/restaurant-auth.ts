@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase-server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
@@ -25,7 +26,10 @@ export type AuthenticatedRestaurant = {
   interface_card_color: string;
 };
 
-export async function getAuthenticatedRestaurant(): Promise<AuthenticatedRestaurant | null> {
+// Wrapped in React's cache() so the layout, generateViewport, and the page
+// itself (which each need the authenticated restaurant independently) share
+// one Supabase round trip per request instead of paying for it 2-3 times.
+export const getAuthenticatedRestaurant = cache(async function getAuthenticatedRestaurant(): Promise<AuthenticatedRestaurant | null> {
   const supabase = await createClient("restaurant");
   const {
     data: { user },
@@ -63,7 +67,7 @@ export async function getAuthenticatedRestaurant(): Promise<AuthenticatedRestaur
     interface_text_color: restaurant.interface_text_color ?? DEFAULT_INTERFACE_TEXT_COLOR,
     interface_card_color: restaurant.interface_card_color ?? DEFAULT_INTERFACE_CARD_COLOR,
   };
-}
+});
 
 export async function requireAuthenticatedRestaurant(): Promise<AuthenticatedRestaurant> {
   const restaurant = await getAuthenticatedRestaurant();
