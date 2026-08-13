@@ -5,14 +5,27 @@ import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function signupClient(formData: FormData) {
   const restaurantId = String(formData.get("restaurantId") ?? "");
+  const restaurantSlug = String(formData.get("restaurantSlug") ?? "");
   const firstName = String(formData.get("firstName") ?? "").trim();
   const lastName = String(formData.get("lastName") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
+  const commercialEmailConsent = formData.get("commercialEmailConsent") === "on";
 
   if (!restaurantId || !firstName || !lastName || !email || !city) {
     throw new Error("Missing required fields");
+  }
+
+  // Phone became mandatory for new clients: real number entered by the
+  // client, never a fallback/placeholder. Existing clients created back
+  // when it was optional are untouched -- this check only gates new rows.
+  if (!phone) {
+    redirect(
+      `/signup?r=${encodeURIComponent(restaurantSlug)}&error=${encodeURIComponent(
+        "Le numéro de téléphone est obligatoire pour créer votre carte."
+      )}`
+    );
   }
 
   // The client is signing up in person at the restaurant, so this first
@@ -36,11 +49,14 @@ export async function signupClient(formData: FormData) {
       first_name: firstName,
       last_name: lastName,
       email,
-      phone: phone || null,
+      phone,
       city: city || null,
       stamps: initialStamps,
       total_visits: 1,
       last_visit_at: now,
+      commercial_email_consent: commercialEmailConsent,
+      commercial_email_consent_at: now,
+      commercial_email_consent_source: "signup",
     })
     .select("id")
     .single();

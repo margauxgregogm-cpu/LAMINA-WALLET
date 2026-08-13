@@ -46,3 +46,23 @@ export async function deleteClient(id: string) {
 
   redirect("/restaurant");
 }
+
+// Lets the restaurant flip a client's marketing opt-in when the client
+// tells them directly (in person, by phone, etc.) instead of through the
+// signup form. This is the CURRENT status: exports always read this value,
+// not whatever was chosen at signup.
+export async function updateCommercialConsent(id: string, nextValue: boolean) {
+  const restaurant = await requireAuthenticatedRestaurant();
+
+  await supabaseAdmin
+    .from("clients")
+    .update({
+      commercial_email_consent: nextValue,
+      commercial_email_consent_at: new Date().toISOString(),
+      commercial_email_consent_source: "restaurant",
+    })
+    .eq("id", id)
+    .eq("restaurant_id", restaurant.id);
+
+  redirect(`/restaurant/clients/${id}?saved=1`);
+}

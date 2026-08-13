@@ -7,9 +7,11 @@ import { signupClient } from "./actions";
 export function SignupForm({
   restaurantId,
   restaurantSlug,
+  error,
 }: {
   restaurantId: string;
   restaurantSlug: string;
+  error?: string;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -20,6 +22,12 @@ export function SignupForm({
     >
       <input type="hidden" name="restaurantId" value={restaurantId} />
       <input type="hidden" name="restaurantSlug" value={restaurantSlug} />
+
+      {error && (
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          {error}
+        </p>
+      )}
 
       <div>
         <label htmlFor="firstName" className="mb-1 block text-sm font-medium">
@@ -60,12 +68,13 @@ export function SignupForm({
 
       <div>
         <label htmlFor="phone" className="mb-1 block text-sm font-medium">
-          Téléphone (optionnel)
+          Téléphone
         </label>
         <input
           id="phone"
           name="phone"
           type="tel"
+          required
           className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
         />
       </div>
@@ -81,6 +90,15 @@ export function SignupForm({
           className="w-full rounded-lg border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
         />
       </div>
+
+      <label className="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="commercialEmailConsent"
+          className="mt-0.5 h-4 w-4 shrink-0"
+        />
+        <span>J&apos;accepte de recevoir des emails commerciaux.</span>
+      </label>
 
       <button
         type="submit"
