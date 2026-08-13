@@ -161,14 +161,30 @@ async function pushToRegistrations(serialNumberFilter: { column: "serial_number"
     return;
   }
 
+  // Sent in batches rather than one giant Promise.all: a single restaurant
+  // with a very large client base would otherwise open a burst of
+  // concurrent HTTP/2 streams equal to its whole device count in one go.
+  // The persistent session from getApnsSession() is still reused for every
+  // stream in every batch -- this only bounds how many streams are open on
+  // it at once, it never opens or closes a connection per batch. 100 is a
+  // conservative concurrency figure for one HTTP/2 connection (well under
+  // typical server-side SETTINGS_MAX_CONCURRENT_STREAMS values) that still
+  // keeps small/medium restaurants (the common case today) at a single
+  // batch, so nothing gets slower for them.
+  const PUSH_BATCH_SIZE = 100;
   const staleIds: string[] = [];
-  const results = await Promise.all(
-    registrations.map(async (r) => {
-      const result = await sendPush(r.push_token, passTypeIdentifier);
-      if (result.outcome === "gone") staleIds.push(r.id);
-      return result;
-    })
-  );
+  const results: PushResult[] = [];
+  for (let i = 0; i < registrations.length; i += PUSH_BATCH_SIZE) {
+    const batch = registrations.slice(i, i + PUSH_BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map(async (r) => {
+        const result = await sendPush(r.push_token, passTypeIdentifier);
+        if (result.outcome === "gone") staleIds.push(r.id);
+        return result;
+      })
+    );
+    results.push(...batchResults);
+  }
 
   const okCount = results.filter((r) => r.outcome === "ok").length;
   const goneCount = results.filter((r) => r.outcome === "gone").length;

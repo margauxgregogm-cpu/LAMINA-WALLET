@@ -246,6 +246,37 @@ export async function updateRestaurant(formData: FormData) {
     (e): e is string => e !== null
   );
 
+  // Read before writing so the Apple Wallet push below can be skipped when
+  // nothing the pass actually renders has changed -- e.g. an admin editing
+  // only `category`/`address`/the interface theme colors (none of which
+  // reach buildAppleWalletPass, see apple-wallet.ts), or just re-submitting
+  // the form unchanged. Previously this endpoint always bumped `updated_at`
+  // and always pushed every registered device of the restaurant on every
+  // save, which is a real source of the kind of repeated no-op updates that
+  // trigger Apple's "some passes are receiving too many updates" warning.
+  const { data: before } = await supabaseAdmin
+    .from("restaurants")
+    .select("name, background_color, wallet_text_color, background_image_url, stamps_required, reward_text, logo_url")
+    .eq("id", id)
+    .single();
+
+  const nextLogoUrl = logoUrl ?? before?.logo_url ?? null;
+  const nextBackgroundImageUrl = backgroundImageUrl
+    ? backgroundImageUrl
+    : removeBackgroundImage
+      ? null
+      : (before?.background_image_url ?? null);
+
+  const walletFieldsChanged =
+    !before ||
+    before.name !== name ||
+    before.background_color !== backgroundColor ||
+    before.wallet_text_color !== walletTextColor ||
+    before.stamps_required !== stampsRequired ||
+    before.reward_text !== rewardText ||
+    before.logo_url !== nextLogoUrl ||
+    before.background_image_url !== nextBackgroundImageUrl;
+
   const update: Record<string, unknown> = {
     name,
     slug,
@@ -259,15 +290,20 @@ export async function updateRestaurant(formData: FormData) {
     interface_theme_color: interfaceThemeColor,
     interface_text_color: interfaceTextColor,
     interface_card_color: interfaceCardColor,
-    // Lets the Apple Wallet push-update endpoint tell which already-saved
-    // passes need refreshing (see apple-wallet-push.ts).
-    updated_at: new Date().toISOString(),
   };
   if (logoUrl) update.logo_url = logoUrl;
   if (backgroundImageUrl) {
     update.background_image_url = backgroundImageUrl;
   } else if (removeBackgroundImage) {
     update.background_image_url = null;
+  }
+  if (walletFieldsChanged) {
+    // Lets the Apple Wallet push-update endpoint tell which already-saved
+    // passes need refreshing (see apple-wallet-push.ts). Only bumped when a
+    // field the pass actually renders changed, so it stays a reliable
+    // "does this pass need refreshing" signal for passesUpdatedSince /
+    // If-Modified-Since instead of moving on every save.
+    update.updated_at = new Date().toISOString();
   }
 
   const { data: updated, error } = await supabaseAdmin
@@ -282,7 +318,9 @@ export async function updateRestaurant(formData: FormData) {
   }
 
   // Best-effort, non-blocking: pushes the design change to any Google/Apple
-  // Wallet passes clients already saved for this restaurant.
+  // Wallet passes clients already saved for this restaurant. Google Wallet
+  // is synced unconditionally as before (out of scope for the Apple-side
+  // over-notification fix); the Apple push is gated on walletFieldsChanged.
   if (updated) {
     after(() =>
       updateGoogleWalletClassDesign({
@@ -293,7 +331,9 @@ export async function updateRestaurant(formData: FormData) {
         logoUrl: updated.logo_url,
       })
     );
-    after(() => notifyApplePassUpdatesForRestaurant(id));
+    if (walletFieldsChanged) {
+      after(() => notifyApplePassUpdatesForRestaurant(id));
+    }
     // Reward text lives per-client on Google's side (see the function doc),
     // so it needs its own pass over every client instead of the one PATCH
     // updateGoogleWalletClassDesign sends for the shared class.
