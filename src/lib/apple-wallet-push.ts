@@ -31,13 +31,23 @@ function getApnsProviderToken(): string {
   return token;
 }
 
+type PushResult = { outcome: "ok" | "gone" | "error"; status: number; detail?: string };
+
 // Sends a silent "your pass changed" push. Returns "gone" if Apple says the
 // token is no longer valid (user removed the pass, reinstalled the OS,
 // etc.) so the caller can drop the stale registration.
-function sendPush(pushToken: string, passTypeIdentifier: string): Promise<"ok" | "gone" | "error"> {
+//
+// Every outcome now carries the raw HTTP status (and, on failure, whatever
+// body Apple sent back -- APNs errors are a JSON {"reason": "..."}) so
+// pushToRegistrations can actually log *why* a push failed instead of a
+// silent no-op indistinguishable from success. Previously the "error" case
+// (anything that isn't 200/410/400) was swallowed with zero logging, so an
+// intermittent APNs rejection (bad/expired provider token, rate limiting,
+// network blip) looked identical to "nothing went wrong" from the outside.
+function sendPush(pushToken: string, passTypeIdentifier: string): Promise<PushResult> {
   return new Promise((resolve) => {
     const client = http2.connect("https://api.push.apple.com:443");
-    client.on("error", () => resolve("error"));
+    client.on("error", (err) => resolve({ outcome: "error", status: 0, detail: String(err) }));
 
     const req = client.request({
       ":method": "POST",
@@ -50,18 +60,22 @@ function sendPush(pushToken: string, passTypeIdentifier: string): Promise<"ok" |
     });
 
     let status = 0;
+    let body = "";
     req.on("response", (headers) => {
       status = Number(headers[":status"] ?? 0);
     });
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
     req.on("end", () => {
       client.close();
-      if (status === 200) resolve("ok");
-      else if (status === 410 || status === 400) resolve("gone");
-      else resolve("error");
+      if (status === 200) resolve({ outcome: "ok", status });
+      else if (status === 410 || status === 400) resolve({ outcome: "gone", status, detail: body });
+      else resolve({ outcome: "error", status, detail: body });
     });
-    req.on("error", () => {
+    req.on("error", (err) => {
       client.close();
-      resolve("error");
+      resolve({ outcome: "error", status: 0, detail: String(err) });
     });
 
     req.end(JSON.stringify({}));
@@ -69,7 +83,10 @@ function sendPush(pushToken: string, passTypeIdentifier: string): Promise<"ok" |
 }
 
 async function pushToRegistrations(serialNumberFilter: { column: "serial_number" | "restaurant_prefix"; value: string }) {
-  if (!isApplePushConfigured()) return;
+  if (!isApplePushConfigured()) {
+    console.warn("Apple Wallet push skipped: not configured (missing APNs env vars).");
+    return;
+  }
 
   const passTypeIdentifier = process.env.APPLE_WALLET_PASS_TYPE_IDENTIFIER!;
   let query = supabaseAdmin
@@ -83,15 +100,31 @@ async function pushToRegistrations(serialNumberFilter: { column: "serial_number"
       : query.like("serial_number", `${serialNumberFilter.value}-%`);
 
   const { data: registrations } = await query;
-  if (!registrations || registrations.length === 0) return;
+  if (!registrations || registrations.length === 0) {
+    console.log(
+      `Apple Wallet push: no registered devices for ${serialNumberFilter.column}=${serialNumberFilter.value} -- nothing to notify.`
+    );
+    return;
+  }
 
   const staleIds: string[] = [];
-  await Promise.all(
+  const results = await Promise.all(
     registrations.map(async (r) => {
       const result = await sendPush(r.push_token, passTypeIdentifier);
-      if (result === "gone") staleIds.push(r.id);
+      if (result.outcome === "gone") staleIds.push(r.id);
+      return result;
     })
   );
+
+  const okCount = results.filter((r) => r.outcome === "ok").length;
+  const goneCount = results.filter((r) => r.outcome === "gone").length;
+  const errorResults = results.filter((r) => r.outcome === "error");
+  console.log(
+    `Apple Wallet push to ${registrations.length} device(s) for ${serialNumberFilter.column}=${serialNumberFilter.value}: ${okCount} ok, ${goneCount} gone (deregistered), ${errorResults.length} error.`
+  );
+  for (const r of errorResults) {
+    console.error(`Apple Wallet push failed: status=${r.status} detail=${r.detail ?? "(none)"}`);
+  }
 
   if (staleIds.length > 0) {
     await supabaseAdmin.from("apple_wallet_registrations").delete().in("id", staleIds);
