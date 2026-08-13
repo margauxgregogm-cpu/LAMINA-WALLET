@@ -46,6 +46,15 @@ export async function loginRestaurant(formData: FormData) {
   redirect("/restaurant/scan");
 }
 
+// Thin useActionState adapter around loginRestaurant: the login form needs
+// a top-level isPending flag (to swap the whole page for the splash screen
+// the instant the button is clicked, not just disable the button) which
+// only useActionState exposes outside the <form> itself -- useFormStatus
+// requires being a descendant of the form.
+export async function loginRestaurantAction(_prevState: unknown, formData: FormData) {
+  await loginRestaurant(formData);
+}
+
 export async function logoutRestaurant() {
   const supabase = await createClient("restaurant");
   // scope: "local" ends only this device's session. Supabase defaults to
