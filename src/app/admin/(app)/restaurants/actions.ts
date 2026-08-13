@@ -117,6 +117,9 @@ export async function createRestaurant(formData: FormData) {
   const slug = slugify(String(formData.get("slug") ?? ""));
   const category = String(formData.get("category") ?? "").trim();
   const backgroundColor = String(formData.get("backgroundColor") ?? "#27272a");
+  // Apple Wallet only (foregroundColor + labelColor, see apple-wallet.ts) --
+  // Google Wallet's Loyalty Class/Object API has no per-field text color.
+  const walletTextColor = String(formData.get("walletTextColor") ?? "#000000");
   const stampsRequired = Number(formData.get("stampsRequired") ?? 8);
   const rewardText = String(formData.get("rewardText") ?? "").trim();
   const welcomeOfferText = String(formData.get("welcomeOfferText") ?? "").trim();
@@ -178,6 +181,7 @@ export async function createRestaurant(formData: FormData) {
       name,
       category: category || null,
       background_color: backgroundColor,
+      wallet_text_color: walletTextColor,
       background_image_url: backgroundImageUrl,
       stamps_required: stampsRequired,
       reward_text: rewardText,
@@ -216,6 +220,9 @@ export async function updateRestaurant(formData: FormData) {
   const slug = slugify(String(formData.get("slug") ?? ""));
   const category = String(formData.get("category") ?? "").trim();
   const backgroundColor = String(formData.get("backgroundColor") ?? "#27272a");
+  // Apple Wallet only (foregroundColor + labelColor, see apple-wallet.ts) --
+  // Google Wallet's Loyalty Class/Object API has no per-field text color.
+  const walletTextColor = String(formData.get("walletTextColor") ?? "#000000");
   const removeBackgroundImage = formData.get("removeBackgroundImage") === "on";
   const stampsRequired = Number(formData.get("stampsRequired") ?? 8);
   const rewardText = String(formData.get("rewardText") ?? "").trim();
@@ -244,6 +251,7 @@ export async function updateRestaurant(formData: FormData) {
     slug,
     category: category || null,
     background_color: backgroundColor,
+    wallet_text_color: walletTextColor,
     stamps_required: stampsRequired,
     reward_text: rewardText,
     welcome_offer_text: welcomeOfferText || null,

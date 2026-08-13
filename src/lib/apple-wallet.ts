@@ -89,6 +89,7 @@ export async function buildAppleWalletPass({
   stamps,
   logoUrl,
   announcementMessage,
+  walletTextColor,
 }: {
   restaurantId: string;
   restaurantName: string;
@@ -104,6 +105,14 @@ export async function buildAppleWalletPass({
    * migration 012_wallet_announcement.sql for why this is what actually
    * makes a notification appear on the card. */
   announcementMessage?: string | null;
+  /** Applied to both foregroundColor (reward text, member name, stamp
+   * progress "3/10") and labelColor (their captions) -- see migration
+   * 016_wallet_text_color.sql. Apple Wallet only: Google Wallet's Loyalty
+   * API has no per-field text color to mirror this to. Omitted entirely
+   * (not defaulted here) when unset, so restaurants that haven't been
+   * re-saved since this field was added keep Apple's own default (black)
+   * exactly as before. */
+  walletTextColor?: string | null;
 }): Promise<Buffer> {
   if (!isAppleWalletConfigured()) {
     throw new Error("Apple Wallet is not configured");
@@ -158,6 +167,9 @@ export async function buildAppleWalletPass({
       serialNumber,
       description: `Carte de fidélité ${restaurantName}`,
       backgroundColor: hexToRgb(backgroundColor),
+      ...(walletTextColor
+        ? { foregroundColor: hexToRgb(walletTextColor), labelColor: hexToRgb(walletTextColor) }
+        : {}),
       // Lets iOS register this pass for push updates -- see
       // apple-wallet-push.ts and the /api/apple-wallet/v1/* routes.
       //
@@ -214,7 +226,7 @@ export async function buildAppleWalletPassForClient(clientId: string): Promise<
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
     .select(
-      "name, background_color, background_image_url, stamps_required, reward_text, logo_url, wallet_announcement"
+      "name, background_color, background_image_url, stamps_required, reward_text, logo_url, wallet_announcement, wallet_text_color"
     )
     .eq("id", client.restaurant_id)
     .single();
@@ -233,6 +245,7 @@ export async function buildAppleWalletPassForClient(clientId: string): Promise<
     stamps: client.stamps,
     logoUrl: restaurant.logo_url,
     announcementMessage: restaurant.wallet_announcement,
+    walletTextColor: restaurant.wallet_text_color,
   });
 
   return { pass, restaurantName: restaurant.name };
