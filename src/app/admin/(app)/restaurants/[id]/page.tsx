@@ -155,6 +155,16 @@ export default async function EditRestaurantPage({
                 <ColorSwatchPicker name="backgroundColor" defaultValue={restaurant.background_color} />
               </FormField>
 
+              <FormField
+                label="Couleur du texte de la carte"
+                hint="s'applique à la récompense, au nom du client et à la progression des tampons (ex: 3/10) — Apple Wallet uniquement, Google Wallet choisit sa propre couleur de texte automatiquement"
+              >
+                <ColorSwatchPicker
+                  name="walletTextColor"
+                  defaultValue={restaurant.wallet_text_color ?? "#000000"}
+                />
+              </FormField>
+
               <hr className="border-white/10" />
               <p className="text-sm font-medium text-zinc-100">Couleurs de l&apos;interface entreprise</p>
               <p className="-mt-2 text-xs text-zinc-500">

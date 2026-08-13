@@ -21,6 +21,7 @@ export type AuthenticatedRestaurant = {
   logo_url: string | null;
   background_color: string;
   background_image_url: string | null;
+  wallet_text_color: string | null;
   interface_theme_color: string;
   interface_text_color: string;
   interface_card_color: string;
@@ -54,7 +55,7 @@ export const getAuthenticatedRestaurant = cache(async function getAuthenticatedR
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
     .select(
-      "id, slug, name, stamps_required, reward_text, logo_url, background_color, background_image_url, interface_theme_color, interface_text_color, interface_card_color"
+      "id, slug, name, stamps_required, reward_text, logo_url, background_color, background_image_url, wallet_text_color, interface_theme_color, interface_text_color, interface_card_color"
     )
     .eq("user_id", authedUser.id)
     .single();

@@ -23,7 +23,9 @@ export default async function SignupSuccessPage({
 
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
-    .select("name, background_color, background_image_url, stamps_required, reward_text, logo_url")
+    .select(
+      "name, background_color, background_image_url, wallet_text_color, stamps_required, reward_text, logo_url"
+    )
     .eq("id", client.restaurant_id)
     .single();
 
@@ -70,6 +72,7 @@ export default async function SignupSuccessPage({
         memberName={client.first_name}
         backgroundColor={restaurant.background_color}
         backgroundImageUrl={restaurant.background_image_url}
+        textColor={restaurant.wallet_text_color}
       />
 
       <div className="flex flex-col items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">

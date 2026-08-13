@@ -1,0 +1,15 @@
+-- Per-restaurant text color for the Apple Wallet pass: applied to the
+-- reward text, client name, and stamp-progress ("3/10") fields, plus their
+-- labels ("RÉCOMPENSE", "MEMBRE", "TAMPONS") -- foregroundColor and
+-- labelColor share this one value, see src/lib/apple-wallet.ts.
+--
+-- Google Wallet has no equivalent field in its public Loyalty Class/Object
+-- API (only a class-level background color), so this column is Apple-only
+-- and never sent to Google Wallet.
+--
+-- Nullable, no DB default: existing restaurants keep rendering with Apple's
+-- own default (black) until an admin explicitly picks a color -- see the
+-- fallback applied in code (src/lib/apple-wallet.ts), matching the pattern
+-- already used for interface_theme_color etc. in
+-- 010_interface_theme_colors.sql.
+alter table restaurants add column if not exists wallet_text_color text;
