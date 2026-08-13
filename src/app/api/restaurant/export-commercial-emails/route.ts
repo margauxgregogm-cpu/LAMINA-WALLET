@@ -3,8 +3,13 @@ import { redirect } from "next/navigation";
 import { getAuthenticatedRestaurant } from "@/lib/restaurant-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 
+// Semicolon, not comma: French-locale Excel's default CSV list separator is
+// ";" (comma is the decimal separator there), so a comma-delimited file
+// opened by double-click lands every field in column A instead of splitting
+// into Email/Prénom/Nom. Google Sheets and other tools auto-detect the
+// delimiter either way, so this loses no compatibility.
 function csvField(value: string) {
-  if (/[",\n]/.test(value)) {
+  if (/[";\n]/.test(value)) {
     return `"${value.replace(/"/g, '""')}"`;
   }
   return value;
@@ -35,9 +40,9 @@ export async function GET() {
   }
 
   const lines = [
-    "Email,Prénom,Nom",
+    "Email;Prénom;Nom",
     ...rows.map((c) =>
-      [csvField(c.email), csvField(c.first_name ?? ""), csvField(c.last_name ?? "")].join(",")
+      [csvField(c.email), csvField(c.first_name ?? ""), csvField(c.last_name ?? "")].join(";")
     ),
   ];
   const csv = "﻿" + lines.join("\r\n") + "\r\n";
