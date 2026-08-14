@@ -112,6 +112,14 @@ function sendPush(pushToken: string, passTypeIdentifier: string): Promise<PushRe
       "apns-topic": passTypeIdentifier,
       "apns-push-type": "background",
       "apns-priority": "5",
+      // Without this, Apple treats the notification as if it were 0 (its
+      // own default): "not stored, only delivered if the device is
+      // currently connected". If the phone isn't reachable at that exact
+      // instant (locked screen, poor signal, Low Power Mode), APNs silently
+      // drops it -- and still answers 200, since the request itself was
+      // valid, so the drop is invisible to us. A day-long window instead
+      // makes APNs actually queue and retry delivery.
+      "apns-expiration": String(Math.floor(Date.now() / 1000) + 86400),
       "content-type": "application/json",
     });
 
