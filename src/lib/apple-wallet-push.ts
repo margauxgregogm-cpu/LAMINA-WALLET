@@ -48,11 +48,29 @@ type PushResult = { outcome: "ok" | "gone" | "error"; status: number; detail?: s
 // this process (HTTP/2 multiplexes many concurrent streams over a single
 // connection natively, which is exactly what Apple recommends instead).
 // It's only replaced if it errors or the remote end closes it.
+//
+// One risk this doesn't cover on its own: Vercel freezes a serverless
+// function between invocations rather than killing it, so a "warm" reuse
+// can hand back a session whose underlying socket died while frozen (NAT/
+// load-balancer idle timeout, Apple's own connection recycling) without
+// Node ever getting the chance to fire "close"/"error" -- closed/destroyed
+// would still read false right up until the next write fails. Tracking how
+// long the session has sat idle and forcing a reconnect past a
+// conservative threshold catches that case without giving up reuse for the
+// common case (several devices pushed back-to-back, or invocations close
+// enough together that the freeze was brief).
 let cachedSession: http2.ClientHttp2Session | null = null;
+let cachedSessionLastUsedAt = 0;
+const SESSION_MAX_IDLE_MS = 60_000;
 
 function getApnsSession(): http2.ClientHttp2Session {
-  if (cachedSession && !cachedSession.closed && !cachedSession.destroyed) {
+  const idleTooLong = Date.now() - cachedSessionLastUsedAt > SESSION_MAX_IDLE_MS;
+  if (cachedSession && !cachedSession.closed && !cachedSession.destroyed && !idleTooLong) {
+    cachedSessionLastUsedAt = Date.now();
     return cachedSession;
+  }
+  if (cachedSession && idleTooLong) {
+    cachedSession.close();
   }
   const session = http2.connect("https://api.push.apple.com:443");
   session.on("error", () => {
@@ -65,6 +83,7 @@ function getApnsSession(): http2.ClientHttp2Session {
   // must not keep the process alive waiting for more work that never comes.
   session.unref();
   cachedSession = session;
+  cachedSessionLastUsedAt = Date.now();
   return session;
 }
 
