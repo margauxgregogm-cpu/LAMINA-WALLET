@@ -33,10 +33,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<Pa
     return new NextResponse(null, { status: 404 });
   }
 
-  const lastModifiedMs = Math.max(
-    Date.parse(restaurant.updated_at ?? "") || 0,
-    Date.parse(client.last_visit_at ?? "") || 0
-  );
+  // Floored to whole seconds: HTTP's Last-Modified/If-Modified-Since have
+  // only second-level precision (toUTCString() below truncates to that),
+  // but restaurant.updated_at/client.last_visit_at carry millisecond
+  // precision from Postgres. Without flooring both sides to the same
+  // precision, the value we send now almost never exactly matches the
+  // fresh millisecond-precision value we'd recompute on the device's next
+  // check -- so the "<= sinceMs" comparison below fails on essentially
+  // every request, and the device gets told "changed" (and re-sent the
+  // full pass) even when nothing actually changed.
+  const lastModifiedMs =
+    Math.floor(
+      Math.max(Date.parse(restaurant.updated_at ?? "") || 0, Date.parse(client.last_visit_at ?? "") || 0) / 1000
+    ) * 1000;
 
   const ifModifiedSince = request.headers.get("if-modified-since");
   if (ifModifiedSince) {
