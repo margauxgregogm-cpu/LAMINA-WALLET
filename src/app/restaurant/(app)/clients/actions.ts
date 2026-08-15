@@ -14,20 +14,29 @@ export async function updateClient(formData: FormData) {
   const phone = String(formData.get("phone") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
 
-  if (!firstName || !lastName || !email || !city) {
+  // Only fields this restaurant's RGPD config actually collects are
+  // required -- a field turned off must never block saving the rest of the
+  // form, whether or not this client happens to already have a value there.
+  const missingRequiredField =
+    (restaurant.collect_first_name && !firstName) ||
+    (restaurant.collect_last_name && !lastName) ||
+    (restaurant.collect_email && !email) ||
+    (restaurant.collect_city && !city);
+
+  if (missingRequiredField) {
     return redirect(
-      `/restaurant/clients/${id}?error=${encodeURIComponent("Nom, prénom, email et ville sont obligatoires.")}`
+      `/restaurant/clients/${id}?error=${encodeURIComponent("Certains champs obligatoires sont manquants.")}`
     );
   }
 
   const { error } = await supabaseAdmin
     .from("clients")
     .update({
-      first_name: firstName,
-      last_name: lastName,
-      email,
+      first_name: firstName || null,
+      last_name: lastName || null,
+      email: email || null,
       phone: phone || null,
-      city,
+      city: city || null,
     })
     .eq("id", id)
     .eq("restaurant_id", restaurant.id);
@@ -37,6 +46,29 @@ export async function updateClient(formData: FormData) {
   }
 
   redirect(`/restaurant/clients/${id}?saved=1`);
+}
+
+// Free-text internal note, visible only to this client's own restaurant --
+// never surfaced to the client, either wallet, or the QR code. Scoped by
+// restaurant_id like every other client mutation here, so one restaurant can
+// never read or overwrite another restaurant's client notes.
+export async function updateClientNote(formData: FormData) {
+  const restaurant = await requireAuthenticatedRestaurant();
+
+  const id = String(formData.get("id") ?? "");
+  const note = String(formData.get("internalNote") ?? "").trim();
+
+  const { error } = await supabaseAdmin
+    .from("clients")
+    .update({ internal_note: note || null })
+    .eq("id", id)
+    .eq("restaurant_id", restaurant.id);
+
+  if (error) {
+    return redirect(`/restaurant/clients/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/restaurant/clients/${id}?noteSaved=1`);
 }
 
 export async function deleteClient(id: string) {

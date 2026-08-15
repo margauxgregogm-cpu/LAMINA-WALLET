@@ -13,6 +13,8 @@ import {
   resetRestaurantPassword,
   updateRestaurantOptions,
   updateRestaurantIdentifier,
+  updateRestaurantCollectFields,
+  updateRestaurantNote,
 } from "../actions";
 import { DeleteRestaurantButton } from "../DeleteRestaurantButton";
 import { getPushQuotaStatus } from "@/lib/push-quota";
@@ -30,12 +32,22 @@ export default async function EditRestaurantPage({
     passwordReset?: string;
     optionsSaved?: string;
     identifierUpdated?: string;
+    collectFieldsSaved?: string;
+    noteSaved?: string;
   }>;
 }) {
   if (!(await isAdmin())) redirect("/admin/login");
 
   const { id } = await params;
-  const { error, saved, passwordReset, optionsSaved, identifierUpdated } = await searchParams;
+  const {
+    error,
+    saved,
+    passwordReset,
+    optionsSaved,
+    identifierUpdated,
+    collectFieldsSaved,
+    noteSaved,
+  } = await searchParams;
   const pushStatus = await getPushQuotaStatus(id);
 
   const { data: restaurant } = await supabaseAdmin
@@ -76,6 +88,16 @@ export default async function EditRestaurantPage({
         {identifierUpdated && (
           <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
             Identifiant de connexion mis à jour.
+          </p>
+        )}
+        {collectFieldsSaved && (
+          <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
+            Champs collectés mis à jour.
+          </p>
+        )}
+        {noteSaved && (
+          <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
+            Note enregistrée.
           </p>
         )}
         {error && <p className="mb-4 rounded-lg bg-red-950 px-3 py-2 text-sm text-red-300">{error}</p>}
@@ -334,6 +356,88 @@ export default async function EditRestaurantPage({
               </div>
             </dl>
           </div>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900 p-6">
+          <h2 className="mb-1 text-lg font-bold tracking-tight text-zinc-100">
+            Données collectées à la création d&apos;une carte
+          </h2>
+          <p className="mb-5 text-sm text-zinc-400">
+            Choisissez les informations demandées au client sur le formulaire public de création de
+            carte pour cette entreprise. Les clients déjà créés conservent toutes leurs données
+            existantes, quelle que soit la configuration choisie ici.
+          </p>
+
+          <form action={updateRestaurantCollectFields} className="space-y-3">
+            <input type="hidden" name="id" value={restaurant.id} />
+
+            <label className="flex items-center gap-3 text-sm text-zinc-100">
+              <input
+                type="checkbox"
+                name="collectFirstName"
+                defaultChecked={restaurant.collect_first_name ?? true}
+                className="h-4 w-4"
+              />
+              Prénom
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-100">
+              <input
+                type="checkbox"
+                name="collectLastName"
+                defaultChecked={restaurant.collect_last_name ?? true}
+                className="h-4 w-4"
+              />
+              Nom
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-100">
+              <input
+                type="checkbox"
+                name="collectPhone"
+                defaultChecked={restaurant.collect_phone ?? true}
+                className="h-4 w-4"
+              />
+              Numéro de téléphone
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-100">
+              <input
+                type="checkbox"
+                name="collectEmail"
+                defaultChecked={restaurant.collect_email ?? true}
+                className="h-4 w-4"
+              />
+              Email
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-100">
+              <input
+                type="checkbox"
+                name="collectCity"
+                defaultChecked={restaurant.collect_city ?? true}
+                className="h-4 w-4"
+              />
+              Ville
+            </label>
+
+            <SubmitButton pendingChildren="Enregistrement..." className={`${adminSecondaryButtonClass} mt-2`}>
+              Enregistrer les champs collectés
+            </SubmitButton>
+          </form>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900 p-6">
+          <h2 className="mb-3 text-lg font-bold tracking-tight text-zinc-100">Note interne</h2>
+          <form action={updateRestaurantNote} className="space-y-3">
+            <input type="hidden" name="id" value={restaurant.id} />
+            <textarea
+              name="internalNote"
+              rows={6}
+              defaultValue={restaurant.internal_note ?? ""}
+              placeholder="Notes, suivi commercial, contexte particulier sur cette entreprise..."
+              className={`${adminInputClass} resize-y`}
+            />
+            <SubmitButton pendingChildren="Enregistrement..." className={adminSecondaryButtonClass}>
+              Enregistrer la note
+            </SubmitButton>
+          </form>
         </div>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900 p-6">
