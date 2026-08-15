@@ -13,14 +13,48 @@ export async function signupClient(formData: FormData) {
   const city = String(formData.get("city") ?? "").trim();
   const commercialEmailConsent = formData.get("commercialEmailConsent") === "on";
 
-  if (!restaurantId || !firstName || !lastName || !email || !city) {
+  if (!restaurantId) {
     throw new Error("Missing required fields");
   }
 
-  // Phone became mandatory for new clients: real number entered by the
-  // client, never a fallback/placeholder. Existing clients created back
-  // when it was optional are untouched -- this check only gates new rows.
-  if (!phone) {
+  // The client is signing up in person at the restaurant, so this first
+  // visit is real -- grant the first stamp immediately instead of making
+  // the restaurant scan them again right after they just filled the form.
+  //
+  // Also the source of truth for which of the 5 fields this restaurant
+  // actually collects (RGPD config) -- re-read here rather than trusting
+  // which inputs the client happened to submit, so a tampered request can't
+  // force a field this restaurant turned off to become required or stored.
+  const { data: restaurant } = await supabaseAdmin
+    .from("restaurants")
+    .select("stamps_required, collect_first_name, collect_last_name, collect_phone, collect_email, collect_city")
+    .eq("id", restaurantId)
+    .single();
+
+  if (!restaurant) {
+    throw new Error("Restaurant introuvable");
+  }
+
+  const collectFirstName = restaurant.collect_first_name ?? true;
+  const collectLastName = restaurant.collect_last_name ?? true;
+  const collectPhone = restaurant.collect_phone ?? true;
+  const collectEmail = restaurant.collect_email ?? true;
+  const collectCity = restaurant.collect_city ?? true;
+
+  if (
+    (collectFirstName && !firstName) ||
+    (collectLastName && !lastName) ||
+    (collectEmail && !email) ||
+    (collectCity && !city)
+  ) {
+    throw new Error("Missing required fields");
+  }
+
+  // Phone became mandatory for new clients (when collected): real number
+  // entered by the client, never a fallback/placeholder. Existing clients
+  // created back when it was optional are untouched -- this check only
+  // gates new rows, and only when this restaurant collects phone at all.
+  if (collectPhone && !phone) {
     redirect(
       `/signup?r=${encodeURIComponent(restaurantSlug)}&error=${encodeURIComponent(
         "Le numéro de téléphone est obligatoire pour créer votre carte."
@@ -28,16 +62,7 @@ export async function signupClient(formData: FormData) {
     );
   }
 
-  // The client is signing up in person at the restaurant, so this first
-  // visit is real -- grant the first stamp immediately instead of making
-  // the restaurant scan them again right after they just filled the form.
-  const { data: restaurant } = await supabaseAdmin
-    .from("restaurants")
-    .select("stamps_required")
-    .eq("id", restaurantId)
-    .single();
-
-  const stampsRequired = restaurant?.stamps_required ?? 8;
+  const stampsRequired = restaurant.stamps_required ?? 8;
   const rewardEarned = 1 >= stampsRequired;
   const initialStamps = rewardEarned ? 0 : 1;
   const now = new Date().toISOString();
@@ -46,17 +71,17 @@ export async function signupClient(formData: FormData) {
     .from("clients")
     .insert({
       restaurant_id: restaurantId,
-      first_name: firstName,
-      last_name: lastName,
-      email,
-      phone,
-      city: city || null,
+      first_name: collectFirstName ? firstName : null,
+      last_name: collectLastName ? lastName || null : null,
+      email: collectEmail ? email : null,
+      phone: collectPhone ? phone : null,
+      city: collectCity ? city || null : null,
       stamps: initialStamps,
       total_visits: 1,
       last_visit_at: now,
-      commercial_email_consent: commercialEmailConsent,
-      commercial_email_consent_at: now,
-      commercial_email_consent_source: "signup",
+      commercial_email_consent: collectEmail ? commercialEmailConsent : false,
+      commercial_email_consent_at: collectEmail ? now : null,
+      commercial_email_consent_source: collectEmail ? "signup" : null,
     })
     .select("id")
     .single();

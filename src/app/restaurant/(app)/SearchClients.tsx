@@ -8,7 +8,7 @@ import { formatRelativeDate } from "@/lib/format-relative-date";
 
 type Client = {
   id: string;
-  first_name: string;
+  first_name: string | null;
   last_name: string | null;
   email: string;
   city: string | null;
@@ -110,7 +110,7 @@ export function SearchClients({ initialQuery = "" }: { initialQuery?: string } =
                   href={`/restaurant/clients/${client.id}`}
                   className="font-semibold underline-offset-2 hover:underline"
                 >
-                  {client.first_name} {client.last_name}
+                  {[client.first_name, client.last_name].filter(Boolean).join(" ") || "Client"}
                 </Link>
                 <div className="truncate text-sm opacity-60">
                   {client.email}

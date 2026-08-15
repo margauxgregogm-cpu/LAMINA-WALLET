@@ -35,12 +35,18 @@ export async function recordVisit(clientId: string) {
     return { error: "Client introuvable pour ce restaurant." as const };
   }
 
+  // RGPD field config can leave first_name/last_name unset for this
+  // restaurant -- never surface an empty or "null" name in the scan overlay.
+  const clientName = client.first_name || client.last_name || "Client";
+  const clientFullName =
+    [client.first_name, client.last_name].filter(Boolean).join(" ") || "Client";
+
   if (client.last_visit_at && isSameCalendarDay(new Date(client.last_visit_at), new Date())) {
     return {
       alreadyVisitedToday: true as const,
       clientId: client.id,
-      clientName: client.first_name,
-      clientFullName: `${client.first_name} ${client.last_name ?? ""}`.trim(),
+      clientName,
+      clientFullName,
       stamps: client.stamps,
       stampsRequired: restaurant.stamps_required,
       rewardText: restaurant.reward_text,
@@ -85,8 +91,8 @@ export async function recordVisit(clientId: string) {
   return {
     alreadyVisitedToday: false as const,
     clientId: client.id,
-    clientName: client.first_name,
-    clientFullName: `${client.first_name} ${client.last_name ?? ""}`.trim(),
+    clientName,
+    clientFullName,
     stamps: stampsAfter,
     stampsRequired: restaurant.stamps_required,
     rewardEarned,

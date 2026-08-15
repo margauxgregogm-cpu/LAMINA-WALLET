@@ -4,7 +4,7 @@ import { Panel } from "./Panel";
 
 type Client = {
   id: string;
-  first_name: string;
+  first_name: string | null;
   last_name: string | null;
   email: string;
   city: string | null;
@@ -27,7 +27,7 @@ export function ClientCard({ client }: { client: Client }) {
           href={`/restaurant/clients/${client.id}`}
           className="font-semibold underline-offset-2 hover:underline"
         >
-          {client.first_name} {client.last_name}
+          {[client.first_name, client.last_name].filter(Boolean).join(" ") || "Client"}
         </Link>
         <div className="text-sm text-[var(--theme-card-fg,#18181b)]/70">
           {client.email}

@@ -15,11 +15,15 @@ export default async function SignupSuccessPage({
 
   const { data: client } = await supabaseAdmin
     .from("clients")
-    .select("id, first_name, stamps, restaurant_id")
+    .select("id, first_name, last_name, stamps, restaurant_id")
     .eq("id", id)
     .single();
 
   if (!client) notFound();
+
+  // RGPD field config can leave first_name unset for this restaurant --
+  // never show/pass an empty or "null" member name.
+  const displayName = client.first_name || client.last_name || "Client";
 
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
@@ -45,7 +49,7 @@ export default async function SignupSuccessPage({
         stampsRequired: restaurant.stamps_required,
         rewardText: restaurant.reward_text,
         clientId: client.id,
-        clientName: client.first_name,
+        clientName: displayName,
         stamps: client.stamps,
         logoUrl: restaurant.logo_url,
       })
@@ -56,7 +60,7 @@ export default async function SignupSuccessPage({
   return (
     <div className="flex flex-1 flex-col items-center gap-8 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
       <div className="text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Bienvenue, {client.first_name} !</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Bienvenue, {displayName} !</h1>
         <p className="mt-1 text-zinc-600 dark:text-zinc-400">
           Votre carte de fidélité est prête.
         </p>
@@ -69,7 +73,7 @@ export default async function SignupSuccessPage({
         stampsEarned={client.stamps}
         stampsRequired={restaurant.stamps_required}
         rewardText={restaurant.reward_text}
-        memberName={client.first_name}
+        memberName={displayName}
         backgroundColor={restaurant.background_color}
         backgroundImageUrl={restaurant.background_image_url}
         textColor={restaurant.wallet_text_color}

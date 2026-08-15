@@ -227,7 +227,7 @@ export async function buildAppleWalletPassForClient(clientId: string): Promise<
 > {
   const { data: client } = await supabaseAdmin
     .from("clients")
-    .select("id, first_name, stamps, restaurant_id")
+    .select("id, first_name, last_name, stamps, restaurant_id")
     .eq("id", clientId)
     .single();
 
@@ -251,7 +251,9 @@ export async function buildAppleWalletPassForClient(clientId: string): Promise<
     stampsRequired: restaurant.stamps_required,
     rewardText: restaurant.reward_text,
     clientId: client.id,
-    clientName: client.first_name,
+    // RGPD field config can leave first_name unset for this restaurant --
+    // never hand PKPass an empty/null member name.
+    clientName: client.first_name || client.last_name || "Client",
     stamps: client.stamps,
     logoUrl: restaurant.logo_url,
     announcementMessage: restaurant.wallet_announcement,
