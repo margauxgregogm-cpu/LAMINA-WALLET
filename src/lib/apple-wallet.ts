@@ -194,7 +194,24 @@ export async function buildAppleWalletPass({
   );
 
   pass.type = "storeCard";
-  pass.headerFields.push({ key: "stamps", label: "TAMPONS", value: `${stamps} / ${stampsRequired}` });
+  // changeMessage here is what makes a stamp update actually surface to the
+  // client: without it, a background push (apns-push-type: background) only
+  // refreshes the pass data silently -- Apple requires apns-priority: 5 for
+  // that push type (10, which would deliver immediately, is rejected), so
+  // delivery timing is never guaranteed and the client has no reason to open
+  // Wallet and see the new count. A changeMessage makes Apple show a visible
+  // notification on value change, exactly like the "announcement" backField
+  // below already does for wallet_announcement -- this is what reliably
+  // triggers the on-screen refresh, independent of the entreprise also
+  // sending a push notification. Fires on every attribution method (scan,
+  // recherche, fiche client, gestion libre add/retrait) since they all set
+  // this same field.
+  pass.headerFields.push({
+    key: "stamps",
+    label: "TAMPONS",
+    value: `${stamps} / ${stampsRequired}`,
+    changeMessage: "Tampon ajouté : %@",
+  });
   // Deliberately no primaryFields: on storeCard that slot renders right on
   // top of the strip image, which is exactly where the member name isn't
   // wanted. Keeping it in secondary/auxiliary puts it in the plain text
