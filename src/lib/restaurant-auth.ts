@@ -36,6 +36,7 @@ export type AuthenticatedRestaurant = {
   collect_profession: boolean;
   collect_nationalite: boolean;
   collect_code_parrainage: boolean;
+  free_stamp_management: boolean;
 };
 
 // Wrapped in React's cache() so the layout, generateViewport, and the page
@@ -66,7 +67,7 @@ export const getAuthenticatedRestaurant = cache(async function getAuthenticatedR
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
     .select(
-      "id, slug, name, stamps_required, reward_text, logo_url, background_color, background_image_url, wallet_text_color, interface_theme_color, interface_text_color, interface_card_color, collect_first_name, collect_last_name, collect_phone, collect_email, collect_city, collect_civilite, collect_date_naissance, collect_adresse_postale, collect_profession, collect_nationalite, collect_code_parrainage"
+      "id, slug, name, stamps_required, reward_text, logo_url, background_color, background_image_url, wallet_text_color, interface_theme_color, interface_text_color, interface_card_color, collect_first_name, collect_last_name, collect_phone, collect_email, collect_city, collect_civilite, collect_date_naissance, collect_adresse_postale, collect_profession, collect_nationalite, collect_code_parrainage, free_stamp_management"
     )
     .eq("user_id", authedUser.id)
     .single();
@@ -93,6 +94,9 @@ export const getAuthenticatedRestaurant = cache(async function getAuthenticatedR
     collect_profession: restaurant.collect_profession ?? false,
     collect_nationalite: restaurant.collect_nationalite ?? false,
     collect_code_parrainage: restaurant.collect_code_parrainage ?? false,
+    // New per-restaurant option -- defaults OFF so every existing
+    // restaurant keeps today's fixed +1-per-visit behavior unchanged.
+    free_stamp_management: restaurant.free_stamp_management ?? false,
   };
 });
 

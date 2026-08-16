@@ -25,7 +25,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<Pa
   }
 
   const [{ data: client }, { data: restaurant }] = await Promise.all([
-    supabaseAdmin.from("clients").select("last_visit_at").eq("id", ids.clientId).single(),
+    supabaseAdmin
+      .from("clients")
+      .select("last_visit_at, stamps_updated_at")
+      .eq("id", ids.clientId)
+      .single(),
     supabaseAdmin.from("restaurants").select("updated_at").eq("id", ids.restaurantId).single(),
   ]);
 
@@ -42,9 +46,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<Pa
   // check -- so the "<= sinceMs" comparison below fails on essentially
   // every request, and the device gets told "changed" (and re-sent the
   // full pass) even when nothing actually changed.
+  //
+  // stamps_updated_at (see migration 020) covers stamp changes that aren't
+  // a real visit -- manual add/retrait from the client fiche, or a
+  // gestion-libre scan -- which never touch last_visit_at on purpose (see
+  // stamp-actions.ts). Purely additive: every path that already updates
+  // last_visit_at (recordVisit) is unaffected.
   const lastModifiedMs =
     Math.floor(
-      Math.max(Date.parse(restaurant.updated_at ?? "") || 0, Date.parse(client.last_visit_at ?? "") || 0) / 1000
+      Math.max(
+        Date.parse(restaurant.updated_at ?? "") || 0,
+        Date.parse(client.last_visit_at ?? "") || 0,
+        Date.parse(client.stamps_updated_at ?? "") || 0
+      ) / 1000
     ) * 1000;
 
   const ifModifiedSince = request.headers.get("if-modified-since");

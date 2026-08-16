@@ -14,6 +14,7 @@ import {
   updateRestaurantOptions,
   updateRestaurantIdentifier,
   updateRestaurantCollectFields,
+  updateRestaurantFreeStampManagement,
   updateRestaurantNote,
 } from "../actions";
 import { DeleteRestaurantButton } from "../DeleteRestaurantButton";
@@ -33,6 +34,7 @@ export default async function EditRestaurantPage({
     optionsSaved?: string;
     identifierUpdated?: string;
     collectFieldsSaved?: string;
+    freeStampManagementSaved?: string;
     noteSaved?: string;
   }>;
 }) {
@@ -46,6 +48,7 @@ export default async function EditRestaurantPage({
     optionsSaved,
     identifierUpdated,
     collectFieldsSaved,
+    freeStampManagementSaved,
     noteSaved,
   } = await searchParams;
   const pushStatus = await getPushQuotaStatus(id);
@@ -93,6 +96,11 @@ export default async function EditRestaurantPage({
         {collectFieldsSaved && (
           <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
             Champs collectés mis à jour.
+          </p>
+        )}
+        {freeStampManagementSaved && (
+          <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
+            Gestion libre des tampons mise à jour.
           </p>
         )}
         {noteSaved && (
@@ -476,6 +484,33 @@ export default async function EditRestaurantPage({
 
             <SubmitButton pendingChildren="Enregistrement..." className={`${adminSecondaryButtonClass} mt-2`}>
               Enregistrer les champs collectés
+            </SubmitButton>
+          </form>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900 p-6">
+          <h2 className="mb-1 text-lg font-bold tracking-tight text-zinc-100">
+            Gestion libre des tampons
+          </h2>
+          <p className="mb-5 text-sm text-zinc-400">
+            Autoriser cette entreprise à choisir librement le nombre de tampons à ajouter ou
+            retirer (scan et fiche client). Désactivée, l&apos;entreprise garde le fonctionnement
+            actuel : 1 scan ou 1 ajout = 1 tampon. Activer ou désactiver cette option ne modifie
+            jamais les tampons déjà attribués.
+          </p>
+          <form action={updateRestaurantFreeStampManagement} className="space-y-4">
+            <input type="hidden" name="id" value={restaurant.id} />
+            <label className="flex items-center gap-3 text-sm text-zinc-100">
+              <input
+                type="checkbox"
+                name="freeStampManagement"
+                defaultChecked={restaurant.free_stamp_management ?? false}
+                className="h-4 w-4"
+              />
+              Autoriser cette entreprise à gérer librement le nombre de tampons
+            </label>
+            <SubmitButton pendingChildren="Enregistrement..." className={adminSecondaryButtonClass}>
+              Enregistrer
             </SubmitButton>
           </form>
         </div>

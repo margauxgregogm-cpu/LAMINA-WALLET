@@ -447,6 +447,30 @@ export async function updateRestaurantCollectFields(formData: FormData) {
   redirect(`/admin/restaurants/${id}?collectFieldsSaved=1`);
 }
 
+// Per-restaurant switch for free-quantity stamp attribution (scan-with-
+// quantity + add/retirer on the client fiche). Its own form/action, like
+// updateRestaurantOptions above, so it can't interfere with the main edit
+// form's image uploads and wallet sync. Deliberately does NOT touch
+// updated_at or trigger a wallet push: flipping this never changes anything
+// a pass renders, and never modifies any client's existing stamp count.
+export async function updateRestaurantFreeStampManagement(formData: FormData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") ?? "");
+  const enabled = formData.get("freeStampManagement") === "on";
+
+  const { error } = await supabaseAdmin
+    .from("restaurants")
+    .update({ free_stamp_management: enabled })
+    .eq("id", id);
+
+  if (error) {
+    return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/admin/restaurants/${id}?freeStampManagementSaved=1`);
+}
+
 // Free-text internal note for the admin's own tracking. Never surfaced to
 // the restaurant, the client, or either wallet. Empty string is stored as
 // null so an emptied note reads the same as one that was never written.
