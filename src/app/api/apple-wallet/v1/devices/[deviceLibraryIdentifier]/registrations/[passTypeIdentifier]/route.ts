@@ -30,18 +30,26 @@ export async function GET(request: NextRequest, { params }: { params: Promise<Pa
 
   const [{ data: restaurants }, { data: clients }] = await Promise.all([
     supabaseAdmin.from("restaurants").select("id, updated_at").in("id", restaurantIds),
-    supabaseAdmin.from("clients").select("id, last_visit_at").in("id", clientIds),
+    supabaseAdmin.from("clients").select("id, last_visit_at, stamps_updated_at").in("id", clientIds),
   ]);
 
   const restaurantUpdatedAt = new Map((restaurants ?? []).map((r) => [r.id, r.updated_at]));
   const clientLastVisitAt = new Map((clients ?? []).map((c) => [c.id, c.last_visit_at]));
+  // See migration 020_free_stamp_management.sql: gestion-libre stamp
+  // adjustments never touch last_visit_at on purpose (they aren't real
+  // visits), so without this the device's own periodic "what changed"
+  // check -- independent of the APNs push -- never sees them and the pass
+  // never gets re-fetched. Purely additive: passes driven by last_visit_at
+  // (scan/recherche/fiche client +1) are unaffected.
+  const clientStampsUpdatedAt = new Map((clients ?? []).map((c) => [c.id, c.stamps_updated_at]));
 
   const sinceMs = since ? Date.parse(since) : 0;
 
   const changed = parsed.filter(({ ids }) => {
     const restaurantMs = Date.parse(restaurantUpdatedAt.get(ids.restaurantId) ?? "") || 0;
     const clientMs = Date.parse(clientLastVisitAt.get(ids.clientId) ?? "") || 0;
-    return Math.max(restaurantMs, clientMs) > sinceMs;
+    const stampsMs = Date.parse(clientStampsUpdatedAt.get(ids.clientId) ?? "") || 0;
+    return Math.max(restaurantMs, clientMs, stampsMs) > sinceMs;
   });
 
   if (changed.length === 0) {
