@@ -12,6 +12,7 @@ import { Panel } from "@/components/restaurant/Panel";
 import { updateClient, updateClientNote } from "../actions";
 import { DeleteClientButton } from "../DeleteClientButton";
 import { CommercialConsentToggle } from "../CommercialConsentToggle";
+import { AddStampButton } from "../AddStampButton";
 
 export default async function ClientDetailPage({
   params,
@@ -78,6 +79,12 @@ export default async function ClientDetailPage({
             backgroundColor={restaurant.background_color}
             backgroundImageUrl={restaurant.background_image_url}
             textColor={restaurant.wallet_text_color}
+          />
+
+          <AddStampButton
+            clientId={client.id}
+            clientFullName={fullName}
+            freeStampManagement={restaurant.free_stamp_management}
           />
 
           {(client.email || client.city) && (
