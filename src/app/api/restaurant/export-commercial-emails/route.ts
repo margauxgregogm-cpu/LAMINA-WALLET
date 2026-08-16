@@ -31,8 +31,10 @@ export async function GET() {
     .eq("restaurant_id", restaurant.id)
     .eq("commercial_email_consent", true);
 
-  // email is a not-null column, but stay defensive: never emit a blank
-  // line or a fabricated address for a row that somehow has none.
+  // email can now be null (RGPD field config lets a restaurant stop
+  // collecting it) -- a client without one was never asked for consent on
+  // this channel in the first place, so it's correctly excluded here, same
+  // as a row that somehow has a blank one.
   const rows = (clients ?? []).filter((c) => c.email && c.email.trim().length > 0);
 
   if (rows.length === 0) {

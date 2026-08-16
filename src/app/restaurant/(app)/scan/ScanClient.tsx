@@ -10,7 +10,7 @@ import { enqueueScan, getQueue, removeFromQueue } from "@/lib/offline-scan-queue
 
 type Client = {
   id: string;
-  first_name: string;
+  first_name: string | null;
   last_name: string | null;
   email: string;
   city: string | null;
@@ -237,7 +237,7 @@ export function ScanClient({
                   href={`/restaurant/clients/${client.id}`}
                   className="text-lg font-semibold underline-offset-2 hover:underline"
                 >
-                  {client.first_name} {client.last_name}
+                  {[client.first_name, client.last_name].filter(Boolean).join(" ") || "Client"}
                 </Link>
                 <div className="text-sm text-zinc-500">
                   {client.email}

@@ -25,6 +25,17 @@ export type AuthenticatedRestaurant = {
   interface_theme_color: string;
   interface_text_color: string;
   interface_card_color: string;
+  collect_first_name: boolean;
+  collect_last_name: boolean;
+  collect_phone: boolean;
+  collect_email: boolean;
+  collect_city: boolean;
+  collect_civilite: boolean;
+  collect_date_naissance: boolean;
+  collect_adresse_postale: boolean;
+  collect_profession: boolean;
+  collect_nationalite: boolean;
+  collect_code_parrainage: boolean;
 };
 
 // Wrapped in React's cache() so the layout, generateViewport, and the page
@@ -55,7 +66,7 @@ export const getAuthenticatedRestaurant = cache(async function getAuthenticatedR
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
     .select(
-      "id, slug, name, stamps_required, reward_text, logo_url, background_color, background_image_url, wallet_text_color, interface_theme_color, interface_text_color, interface_card_color"
+      "id, slug, name, stamps_required, reward_text, logo_url, background_color, background_image_url, wallet_text_color, interface_theme_color, interface_text_color, interface_card_color, collect_first_name, collect_last_name, collect_phone, collect_email, collect_city, collect_civilite, collect_date_naissance, collect_adresse_postale, collect_profession, collect_nationalite, collect_code_parrainage"
     )
     .eq("user_id", authedUser.id)
     .single();
@@ -67,6 +78,21 @@ export const getAuthenticatedRestaurant = cache(async function getAuthenticatedR
     interface_theme_color: restaurant.interface_theme_color ?? DEFAULT_INTERFACE_THEME_COLOR,
     interface_text_color: restaurant.interface_text_color ?? DEFAULT_INTERFACE_TEXT_COLOR,
     interface_card_color: restaurant.interface_card_color ?? DEFAULT_INTERFACE_CARD_COLOR,
+    // Restaurants that predate the RGPD field config (or if a column is
+    // ever null) keep collecting exactly the 5 fields they collect today.
+    collect_first_name: restaurant.collect_first_name ?? true,
+    collect_last_name: restaurant.collect_last_name ?? true,
+    collect_phone: restaurant.collect_phone ?? true,
+    collect_email: restaurant.collect_email ?? true,
+    collect_city: restaurant.collect_city ?? true,
+    // The 6 additional fields are brand new data points -- default OFF, so
+    // adding them never changes what an existing restaurant already collects.
+    collect_civilite: restaurant.collect_civilite ?? false,
+    collect_date_naissance: restaurant.collect_date_naissance ?? false,
+    collect_adresse_postale: restaurant.collect_adresse_postale ?? false,
+    collect_profession: restaurant.collect_profession ?? false,
+    collect_nationalite: restaurant.collect_nationalite ?? false,
+    collect_code_parrainage: restaurant.collect_code_parrainage ?? false,
   };
 });
 

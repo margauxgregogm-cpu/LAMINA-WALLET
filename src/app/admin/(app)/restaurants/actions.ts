@@ -410,6 +410,64 @@ export async function updateRestaurantOptions(formData: FormData) {
   redirect(`/admin/restaurants/${id}?optionsSaved=1`);
 }
 
+// RGPD field configuration: which of the 11 client-facing fields this
+// restaurant collects at signup. Its own form/action (like
+// updateRestaurantOptions above) so it can't interfere with the main edit
+// form's image uploads and wallet sync. Unchecked boxes post nothing, so an
+// absent key means "off" -- every flag must be written explicitly on every
+// save, not merged with the previous value.
+export async function updateRestaurantCollectFields(formData: FormData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") ?? "");
+
+  const { error } = await supabaseAdmin
+    .from("restaurants")
+    .update({
+      collect_first_name: formData.get("collectFirstName") === "on",
+      collect_last_name: formData.get("collectLastName") === "on",
+      collect_phone: formData.get("collectPhone") === "on",
+      collect_email: formData.get("collectEmail") === "on",
+      collect_city: formData.get("collectCity") === "on",
+      collect_civilite: formData.get("collectCivilite") === "on",
+      collect_date_naissance: formData.get("collectDateNaissance") === "on",
+      collect_adresse_postale: formData.get("collectAdressePostale") === "on",
+      collect_profession: formData.get("collectProfession") === "on",
+      collect_nationalite: formData.get("collectNationalite") === "on",
+      collect_code_parrainage: formData.get("collectCodeParrainage") === "on",
+    })
+    .eq("id", id);
+
+  if (error) {
+    return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  // Deliberately does NOT touch updated_at or the wallet sync: this only
+  // affects the signup form, nothing the pass renders.
+  redirect(`/admin/restaurants/${id}?collectFieldsSaved=1`);
+}
+
+// Free-text internal note for the admin's own tracking. Never surfaced to
+// the restaurant, the client, or either wallet. Empty string is stored as
+// null so an emptied note reads the same as one that was never written.
+export async function updateRestaurantNote(formData: FormData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") ?? "");
+  const note = String(formData.get("internalNote") ?? "").trim();
+
+  const { error } = await supabaseAdmin
+    .from("restaurants")
+    .update({ internal_note: note || null })
+    .eq("id", id);
+
+  if (error) {
+    return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect(`/admin/restaurants/${id}?noteSaved=1`);
+}
+
 // Renaming the login identifier never touches the Supabase Auth user, its
 // email or its password -- it only writes the separate `login_identifier`
 // column that loginRestaurant() resolves at sign-in time.

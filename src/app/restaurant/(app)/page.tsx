@@ -166,7 +166,8 @@ export default async function RestaurantDashboardPage({
                   </thead>
                   <tbody>
                     {topClients.map((client, i) => {
-                      const fullName = `${client.first_name} ${client.last_name ?? ""}`.trim();
+                      const fullName =
+                        [client.first_name, client.last_name].filter(Boolean).join(" ") || "Client";
                       return (
                         <tr key={client.id} className="border-t border-black/5">
                           <td className="px-2 py-3 opacity-50">{i + 1}</td>
@@ -201,7 +202,8 @@ export default async function RestaurantDashboardPage({
             {recentClients && recentClients.length > 0 ? (
               <div className="flex flex-col">
                 {recentClients.map((client) => {
-                  const fullName = `${client.first_name} ${client.last_name ?? ""}`.trim();
+                  const fullName =
+                    [client.first_name, client.last_name].filter(Boolean).join(" ") || "Client";
                   return (
                     <Link
                       key={client.id}
