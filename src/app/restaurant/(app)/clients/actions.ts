@@ -13,6 +13,12 @@ export async function updateClient(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
+  const civilite = String(formData.get("civilite") ?? "").trim();
+  const dateNaissance = String(formData.get("dateNaissance") ?? "").trim();
+  const adressePostale = String(formData.get("adressePostale") ?? "").trim();
+  const profession = String(formData.get("profession") ?? "").trim();
+  const nationalite = String(formData.get("nationalite") ?? "").trim();
+  const codeParrainage = String(formData.get("codeParrainage") ?? "").trim();
 
   // Only fields this restaurant's RGPD config actually collects are
   // required -- a field turned off must never block saving the rest of the
@@ -37,6 +43,14 @@ export async function updateClient(formData: FormData) {
       email: email || null,
       phone: phone || null,
       city: city || null,
+      // The 6 additional fields are never required, regardless of RGPD
+      // config -- just store whatever was entered, or clear it.
+      civilite: civilite || null,
+      date_naissance: dateNaissance || null,
+      adresse_postale: adressePostale || null,
+      profession: profession || null,
+      nationalite: nationalite || null,
+      code_parrainage: codeParrainage || null,
     })
     .eq("id", id)
     .eq("restaurant_id", restaurant.id);

@@ -15,7 +15,7 @@ export default async function SignupPage({
   const { data: restaurant } = await supabase
     .from("restaurants")
     .select(
-      "id, slug, name, background_color, background_image_url, wallet_text_color, stamps_required, reward_text, welcome_offer_text, logo_url, collect_first_name, collect_last_name, collect_phone, collect_email, collect_city"
+      "id, slug, name, background_color, background_image_url, wallet_text_color, stamps_required, reward_text, welcome_offer_text, logo_url, collect_first_name, collect_last_name, collect_phone, collect_email, collect_city, collect_civilite, collect_date_naissance, collect_adresse_postale, collect_profession, collect_nationalite, collect_code_parrainage"
     )
     .eq("slug", slug)
     .single();
@@ -32,6 +32,14 @@ export default async function SignupPage({
   const collectPhone = restaurant.collect_phone ?? true;
   const collectEmail = restaurant.collect_email ?? true;
   const collectCity = restaurant.collect_city ?? true;
+  // The 6 additional fields default OFF -- brand new data points no
+  // restaurant has ever collected until an admin actively turns one on.
+  const collectCivilite = restaurant.collect_civilite ?? false;
+  const collectDateNaissance = restaurant.collect_date_naissance ?? false;
+  const collectAdressePostale = restaurant.collect_adresse_postale ?? false;
+  const collectProfession = restaurant.collect_profession ?? false;
+  const collectNationalite = restaurant.collect_nationalite ?? false;
+  const collectCodeParrainage = restaurant.collect_code_parrainage ?? false;
 
   return (
     <div className="flex flex-1 flex-col items-center gap-8 bg-zinc-50 px-4 py-12 dark:bg-zinc-950">
@@ -63,6 +71,12 @@ export default async function SignupPage({
         collectPhone={collectPhone}
         collectEmail={collectEmail}
         collectCity={collectCity}
+        collectCivilite={collectCivilite}
+        collectDateNaissance={collectDateNaissance}
+        collectAdressePostale={collectAdressePostale}
+        collectProfession={collectProfession}
+        collectNationalite={collectNationalite}
+        collectCodeParrainage={collectCodeParrainage}
       />
     </div>
   );

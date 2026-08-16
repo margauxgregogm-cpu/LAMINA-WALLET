@@ -216,6 +216,43 @@ export default async function ClientDetailPage({
                 className={formInputClass}
               />
             </FormField>
+            <FormField label="Civilité (optionnel)">
+              <select name="civilite" defaultValue={client.civilite ?? ""} className={formInputClass}>
+                <option value="">Sélectionner...</option>
+                <option value="Madame">Madame</option>
+                <option value="Monsieur">Monsieur</option>
+                <option value="Autre">Autre</option>
+              </select>
+            </FormField>
+            <FormField label="Date de naissance (optionnel)">
+              <input
+                name="dateNaissance"
+                type="date"
+                defaultValue={client.date_naissance ?? ""}
+                className={formInputClass}
+              />
+            </FormField>
+            <FormField label="Adresse postale (optionnel)">
+              <textarea
+                name="adressePostale"
+                rows={2}
+                defaultValue={client.adresse_postale ?? ""}
+                className={`${formInputClass} resize-y`}
+              />
+            </FormField>
+            <FormField label="Profession (optionnel)">
+              <input name="profession" defaultValue={client.profession ?? ""} className={formInputClass} />
+            </FormField>
+            <FormField label="Nationalité (optionnel)">
+              <input name="nationalite" defaultValue={client.nationalite ?? ""} className={formInputClass} />
+            </FormField>
+            <FormField label="Code de parrainage (optionnel)">
+              <input
+                name="codeParrainage"
+                defaultValue={client.code_parrainage ?? ""}
+                className={formInputClass}
+              />
+            </FormField>
 
             <SubmitButton pendingChildren="Enregistrement..." className={primaryButtonClass}>
               Enregistrer

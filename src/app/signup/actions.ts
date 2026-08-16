@@ -12,6 +12,12 @@ export async function signupClient(formData: FormData) {
   const phone = String(formData.get("phone") ?? "").trim();
   const city = String(formData.get("city") ?? "").trim();
   const commercialEmailConsent = formData.get("commercialEmailConsent") === "on";
+  const civilite = String(formData.get("civilite") ?? "").trim();
+  const dateNaissance = String(formData.get("dateNaissance") ?? "").trim();
+  const adressePostale = String(formData.get("adressePostale") ?? "").trim();
+  const profession = String(formData.get("profession") ?? "").trim();
+  const nationalite = String(formData.get("nationalite") ?? "").trim();
+  const codeParrainage = String(formData.get("codeParrainage") ?? "").trim();
 
   if (!restaurantId) {
     throw new Error("Missing required fields");
@@ -21,13 +27,15 @@ export async function signupClient(formData: FormData) {
   // visit is real -- grant the first stamp immediately instead of making
   // the restaurant scan them again right after they just filled the form.
   //
-  // Also the source of truth for which of the 5 fields this restaurant
+  // Also the source of truth for which of the 11 fields this restaurant
   // actually collects (RGPD config) -- re-read here rather than trusting
   // which inputs the client happened to submit, so a tampered request can't
   // force a field this restaurant turned off to become required or stored.
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
-    .select("stamps_required, collect_first_name, collect_last_name, collect_phone, collect_email, collect_city")
+    .select(
+      "stamps_required, collect_first_name, collect_last_name, collect_phone, collect_email, collect_city, collect_civilite, collect_date_naissance, collect_adresse_postale, collect_profession, collect_nationalite, collect_code_parrainage"
+    )
     .eq("id", restaurantId)
     .single();
 
@@ -40,6 +48,15 @@ export async function signupClient(formData: FormData) {
   const collectPhone = restaurant.collect_phone ?? true;
   const collectEmail = restaurant.collect_email ?? true;
   const collectCity = restaurant.collect_city ?? true;
+  // The 6 additional fields are always optional (never required), even
+  // when collected -- see collectCivilite... below, no presence check for
+  // any of them.
+  const collectCivilite = restaurant.collect_civilite ?? false;
+  const collectDateNaissance = restaurant.collect_date_naissance ?? false;
+  const collectAdressePostale = restaurant.collect_adresse_postale ?? false;
+  const collectProfession = restaurant.collect_profession ?? false;
+  const collectNationalite = restaurant.collect_nationalite ?? false;
+  const collectCodeParrainage = restaurant.collect_code_parrainage ?? false;
 
   if (
     (collectFirstName && !firstName) ||
@@ -76,6 +93,12 @@ export async function signupClient(formData: FormData) {
       email: collectEmail ? email : null,
       phone: collectPhone ? phone : null,
       city: collectCity ? city || null : null,
+      civilite: collectCivilite ? civilite || null : null,
+      date_naissance: collectDateNaissance ? dateNaissance || null : null,
+      adresse_postale: collectAdressePostale ? adressePostale || null : null,
+      profession: collectProfession ? profession || null : null,
+      nationalite: collectNationalite ? nationalite || null : null,
+      code_parrainage: collectCodeParrainage ? codeParrainage || null : null,
       stamps: initialStamps,
       total_visits: 1,
       last_visit_at: now,

@@ -410,7 +410,7 @@ export async function updateRestaurantOptions(formData: FormData) {
   redirect(`/admin/restaurants/${id}?optionsSaved=1`);
 }
 
-// RGPD field configuration: which of the 5 client-facing fields this
+// RGPD field configuration: which of the 11 client-facing fields this
 // restaurant collects at signup. Its own form/action (like
 // updateRestaurantOptions above) so it can't interfere with the main edit
 // form's image uploads and wallet sync. Unchecked boxes post nothing, so an
@@ -429,6 +429,12 @@ export async function updateRestaurantCollectFields(formData: FormData) {
       collect_phone: formData.get("collectPhone") === "on",
       collect_email: formData.get("collectEmail") === "on",
       collect_city: formData.get("collectCity") === "on",
+      collect_civilite: formData.get("collectCivilite") === "on",
+      collect_date_naissance: formData.get("collectDateNaissance") === "on",
+      collect_adresse_postale: formData.get("collectAdressePostale") === "on",
+      collect_profession: formData.get("collectProfession") === "on",
+      collect_nationalite: formData.get("collectNationalite") === "on",
+      collect_code_parrainage: formData.get("collectCodeParrainage") === "on",
     })
     .eq("id", id);
 

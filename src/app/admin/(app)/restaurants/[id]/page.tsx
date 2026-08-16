@@ -417,6 +417,63 @@ export default async function EditRestaurantPage({
               Ville
             </label>
 
+            <hr className="border-white/10" />
+
+            <label className="flex items-center gap-3 text-sm text-zinc-100">
+              <input
+                type="checkbox"
+                name="collectCivilite"
+                defaultChecked={restaurant.collect_civilite ?? false}
+                className="h-4 w-4"
+              />
+              Civilité
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-100">
+              <input
+                type="checkbox"
+                name="collectDateNaissance"
+                defaultChecked={restaurant.collect_date_naissance ?? false}
+                className="h-4 w-4"
+              />
+              Date de naissance
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-100">
+              <input
+                type="checkbox"
+                name="collectAdressePostale"
+                defaultChecked={restaurant.collect_adresse_postale ?? false}
+                className="h-4 w-4"
+              />
+              Adresse postale
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-100">
+              <input
+                type="checkbox"
+                name="collectProfession"
+                defaultChecked={restaurant.collect_profession ?? false}
+                className="h-4 w-4"
+              />
+              Profession
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-100">
+              <input
+                type="checkbox"
+                name="collectNationalite"
+                defaultChecked={restaurant.collect_nationalite ?? false}
+                className="h-4 w-4"
+              />
+              Nationalité
+            </label>
+            <label className="flex items-center gap-3 text-sm text-zinc-100">
+              <input
+                type="checkbox"
+                name="collectCodeParrainage"
+                defaultChecked={restaurant.collect_code_parrainage ?? false}
+                className="h-4 w-4"
+              />
+              Code de parrainage
+            </label>
+
             <SubmitButton pendingChildren="Enregistrement..." className={`${adminSecondaryButtonClass} mt-2`}>
               Enregistrer les champs collectés
             </SubmitButton>
