@@ -210,7 +210,7 @@ export async function buildAppleWalletPass({
     key: "stamps",
     label: "TAMPONS",
     value: `${stamps} / ${stampsRequired}`,
-    changeMessage: "Tampon ajouté : %@",
+    changeMessage: "Solde de vos points : %@",
   });
   // Deliberately no primaryFields: on storeCard that slot renders right on
   // top of the strip image, which is exactly where the member name isn't
