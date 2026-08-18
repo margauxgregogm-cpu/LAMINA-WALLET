@@ -18,6 +18,7 @@ import {
   updateRestaurantNote,
 } from "../actions";
 import { DeleteRestaurantButton } from "../DeleteRestaurantButton";
+import { AccessRestaurantButton } from "../AccessRestaurantButton";
 import { getPushQuotaStatus } from "@/lib/push-quota";
 import { describePeriod, formatRenewalDate } from "@/lib/push-plans";
 import { PushPlanFields } from "@/components/admin/PushPlanFields";
@@ -70,8 +71,13 @@ export default async function EditRestaurantPage({
   return (
     <div className="flex flex-1 flex-col items-center gap-6 px-4 py-8 md:py-12">
       <div className="w-full max-w-3xl">
-        <h1 className="text-2xl font-bold tracking-tight">{restaurant.name}</h1>
-        <p className="mb-4 text-sm text-zinc-400">{restaurant.login_identifier ?? " "}</p>
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{restaurant.name}</h1>
+            <p className="text-sm text-zinc-400">{restaurant.login_identifier ?? " "}</p>
+          </div>
+          <AccessRestaurantButton id={restaurant.id} />
+        </div>
 
         {saved && (
           <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
