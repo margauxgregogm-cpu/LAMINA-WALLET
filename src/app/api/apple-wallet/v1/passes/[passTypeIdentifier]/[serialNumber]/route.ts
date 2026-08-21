@@ -65,14 +65,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<Pa
   if (ifModifiedSince) {
     const sinceMs = Date.parse(ifModifiedSince);
     if (!Number.isNaN(sinceMs) && lastModifiedMs <= sinceMs) {
+      // Diagnostic only -- lets us confirm from the logs whether a device
+      // actually calls back after a push, and whether it's told "nothing
+      // changed" vs given a fresh pass. No behavior change.
+      console.log(
+        `Apple Wallet pass check: serial=${serialNumber} -> 304 (not modified, lastModified=${new Date(lastModifiedMs).toISOString()}, ifModifiedSince=${ifModifiedSince})`
+      );
       return new NextResponse(null, { status: 304 });
     }
   }
 
   const result = await buildAppleWalletPassForClient(ids.clientId);
   if ("error" in result) {
+    console.log(`Apple Wallet pass check: serial=${serialNumber} -> 404 (${result.error})`);
     return new NextResponse(null, { status: 404 });
   }
+
+  console.log(
+    `Apple Wallet pass check: serial=${serialNumber} -> 200 (fresh pass sent, lastModified=${new Date(lastModifiedMs || Date.now()).toISOString()}, ifModifiedSince=${ifModifiedSince ?? "none"})`
+  );
 
   return new NextResponse(new Uint8Array(result.pass), {
     headers: {
