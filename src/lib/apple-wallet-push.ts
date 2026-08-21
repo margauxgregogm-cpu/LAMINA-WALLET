@@ -14,7 +14,10 @@ export function isApplePushConfigured() {
 
 // APNs wants provider tokens reused for a while, not regenerated per
 // request -- a fresh one per push would work too, but this is what Apple
-// recommends and it's nearly free to do.
+// recommends and it's nearly free to do. Unlike the HTTP/2 session below,
+// this is inert data (a signed JWT string), not a live connection, so
+// caching it across invocations carries none of the staleness risk a
+// cached socket does -- worst case it's regenerated a bit early.
 let cachedToken: { token: string; issuedAt: number } | null = null;
 const TOKEN_MAX_AGE_MS = 50 * 60 * 1000;
 
@@ -33,88 +36,17 @@ function getApnsProviderToken(): string {
 
 type PushResult = { outcome: "ok" | "gone" | "error"; status: number; detail?: string };
 
-// Apple explicitly warns against opening a fresh connection per push
-// ("repeatedly opening and closing connections to APNs" can get a provider
-// throttled/deprioritized -- https://developer.apple.com/documentation/usernotifications/setting-up-a-remote-notification-server,
-// "Establish a persistent connection"). The previous version of this file
-// called http2.connect() and client.close() on every single sendPush(),
-// including once per registered device inside the same Promise.all -- i.e.
-// N brand-new connections for N devices on every save, and another N next
-// time. That matches this project's own symptom report almost exactly:
-// pushes appearing to queue up and only deliver in a burst once something
-// else (a new client's own pass creation) touched Apple's servers again.
-//
-// One HTTP/2 session is now opened lazily and reused across every push in
-// this process (HTTP/2 multiplexes many concurrent streams over a single
-// connection natively, which is exactly what Apple recommends instead).
-// It's only replaced if it errors or the remote end closes it.
-//
-// One risk this doesn't cover on its own: Vercel freezes a serverless
-// function between invocations rather than killing it, so a "warm" reuse
-// can hand back a session whose underlying socket died while frozen (NAT/
-// load-balancer idle timeout, Apple's own connection recycling) without
-// Node ever getting the chance to fire "close"/"error" -- closed/destroyed
-// would still read false right up until the next write fails. Tracking how
-// long the session has sat idle and forcing a reconnect past a
-// conservative threshold catches that case without giving up reuse for the
-// common case (several devices pushed back-to-back, or invocations close
-// enough together that the freeze was brief).
-let cachedSession: http2.ClientHttp2Session | null = null;
-let cachedSessionLastUsedAt = 0;
-const SESSION_MAX_IDLE_MS = 60_000;
-
-function getApnsSession(): http2.ClientHttp2Session {
-  const idleTooLong = Date.now() - cachedSessionLastUsedAt > SESSION_MAX_IDLE_MS;
-  if (cachedSession && !cachedSession.closed && !cachedSession.destroyed && !idleTooLong) {
-    cachedSessionLastUsedAt = Date.now();
-    return cachedSession;
-  }
-  // Diagnostic only: distinguishes "reused a warm session" from "opened a
-  // fresh one" per push, to check whether a stale-but-not-yet-detected
-  // socket (see comment above) is behind any future intermittent failures.
-  console.log(
-    `Apple Wallet APNs session: opening new (reason=${!cachedSession ? "none cached" : cachedSession.closed || cachedSession.destroyed ? "previous closed/destroyed" : "idle too long"})`
-  );
-  if (cachedSession && idleTooLong) {
-    cachedSession.close();
-  }
-  const session = http2.connect("https://api.push.apple.com:443");
-  session.on("error", () => {
-    if (cachedSession === session) cachedSession = null;
-  });
-  session.on("close", () => {
-    if (cachedSession === session) cachedSession = null;
-  });
-  // Serverless functions get frozen between invocations -- an open socket
-  // must not keep the process alive waiting for more work that never comes.
-  session.unref();
-  cachedSession = session;
-  cachedSessionLastUsedAt = Date.now();
-  return session;
-}
-
 const REQUEST_TIMEOUT_MS = 10_000;
 
-// Sends a silent "your pass changed" push. Returns "gone" if Apple says the
-// token is no longer valid (user removed the pass, reinstalled the OS,
-// etc.) so the caller can drop the stale registration.
-//
-// Every outcome now carries the raw HTTP status (and, on failure, whatever
-// body Apple sent back -- APNs errors are a JSON {"reason": "..."}) so
-// pushToRegistrations can actually log *why* a push failed instead of a
-// silent no-op indistinguishable from success. Previously the "error" case
-// (anything that isn't 200/410/400) was swallowed with zero logging, so an
-// intermittent APNs rejection (bad/expired provider token, rate limiting,
-// network blip) looked identical to "nothing went wrong" from the outside.
-//
-// Also now has an explicit timeout: without one, a stream that never emits
-// "response"/"end"/"error" (Apple hangs, or a network middlebox drops the
-// packet silently) left this Promise permanently unresolved -- meaning the
-// Promise.all in pushToRegistrations, and the after() callback awaiting it,
-// could hang indefinitely and never reach the summary log below, an
-// on-server failure mode indistinguishable from "nothing happened" from
-// the outside, exactly like the reported symptom.
-function sendPush(pushToken: string, passTypeIdentifier: string): Promise<PushResult> {
+// Sends a silent "your pass changed" push over an already-open session.
+// Returns "gone" if Apple says the token is no longer valid (user removed
+// the pass, reinstalled the OS, etc.) so the caller can drop the stale
+// registration.
+function sendPush(
+  session: http2.ClientHttp2Session,
+  pushToken: string,
+  passTypeIdentifier: string
+): Promise<PushResult> {
   return new Promise((resolve) => {
     let settled = false;
     const finish = (result: PushResult) => {
@@ -129,7 +61,6 @@ function sendPush(pushToken: string, passTypeIdentifier: string): Promise<PushRe
       finish({ outcome: "error", status: 0, detail: "timed out waiting for APNs response" });
     }, REQUEST_TIMEOUT_MS);
 
-    const session = getApnsSession();
     const req = session.request({
       ":method": "POST",
       ":path": `/3/device/${pushToken}`,
@@ -166,11 +97,9 @@ function sendPush(pushToken: string, passTypeIdentifier: string): Promise<PushRe
       // many unrelated reasons too (BadTopic, BadExpirationDate, IdleTimeout,
       // PayloadEmpty, DuplicateHeaders...), most of which are transient or
       // request-shape issues that say nothing about the token's validity.
-      // Treating every 400 as "gone" (as this used to) permanently deleted
-      // valid, working registrations the first time APNs rejected a push for
-      // any unrelated reason -- a card that "used to update and silently
-      // stopped" is exactly what that produces. Only "BadDeviceToken" (the
-      // 400-status equivalent of a dead token) is now treated as gone.
+      // Only "BadDeviceToken" (the 400-status equivalent of a dead token)
+      // is treated as gone -- everything else is logged as an error but the
+      // registration is kept and retried on the next change.
       let reason: string | undefined;
       try {
         reason = (JSON.parse(body) as { reason?: string }).reason;
@@ -186,6 +115,52 @@ function sendPush(pushToken: string, passTypeIdentifier: string): Promise<PushRe
 
     req.end(JSON.stringify({}));
   });
+}
+
+const SESSION_CONNECT_TIMEOUT_MS = 10_000;
+
+// Opens a fresh HTTP/2 session for this one push event only -- deliberately
+// NOT cached across invocations. An earlier version of this file reused one
+// module-level session across every save, on the (correct, Apple-documented)
+// principle that opening a new connection per push token is wasteful. But
+// caching it *across separate admin saves*, in a serverless environment
+// where Vercel freezes and later thaws an instance between invocations, has
+// a real failure mode this project's own comments already flagged: a thawed
+// session's underlying socket can have died while frozen (NAT/load-balancer
+// idle timeout) without Node ever getting the chance to fire "close"/
+// "error" -- so the next push on that stale session can silently hang or
+// fail, indistinguishable from "nothing happened" until this event's own
+// REQUEST_TIMEOUT_MS finally kicks in. That matches exactly the symptom of
+// some saves delivering and others silently not.
+//
+// This still satisfies Apple's actual requirement (never open a separate
+// connection *per device* within one push event -- see the batch loop
+// below, which reuses this one session for every registration in the
+// event) while removing any possibility of a stale, cross-invocation
+// connection ever being reused. The cost is one fresh TLS+HTTP/2 handshake
+// per admin save/notification, which is negligible next to a push actually
+// failing to deliver.
+async function withApnsSession<T>(fn: (session: http2.ClientHttp2Session) => Promise<T>): Promise<T> {
+  const session = http2.connect("https://api.push.apple.com:443");
+  session.unref();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error("Timed out connecting to APNs"));
+      }, SESSION_CONNECT_TIMEOUT_MS);
+      session.once("connect", () => {
+        clearTimeout(timer);
+        resolve();
+      });
+      session.once("error", (err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+    });
+    return await fn(session);
+  } finally {
+    session.close();
+  }
 }
 
 async function pushToRegistrations(serialNumberFilter: { column: "serial_number" | "restaurant_prefix"; value: string }) {
@@ -213,38 +188,48 @@ async function pushToRegistrations(serialNumberFilter: { column: "serial_number"
     return;
   }
 
-  // Sent in batches rather than one giant Promise.all: a single restaurant
-  // with a very large client base would otherwise open a burst of
-  // concurrent HTTP/2 streams equal to its whole device count in one go.
-  // The persistent session from getApnsSession() is still reused for every
-  // stream in every batch -- this only bounds how many streams are open on
-  // it at once, it never opens or closes a connection per batch. 100 is a
-  // conservative concurrency figure for one HTTP/2 connection (well under
-  // typical server-side SETTINGS_MAX_CONCURRENT_STREAMS values) that still
-  // keeps small/medium restaurants (the common case today) at a single
-  // batch, so nothing gets slower for them.
-  const PUSH_BATCH_SIZE = 100;
+  let results: PushResult[] = [];
   const staleIds: string[] = [];
-  const results: PushResult[] = [];
-  for (let i = 0; i < registrations.length; i += PUSH_BATCH_SIZE) {
-    const batch = registrations.slice(i, i + PUSH_BATCH_SIZE);
-    const batchResults = await Promise.all(
-      batch.map(async (r) => {
-        const result = await sendPush(r.push_token, passTypeIdentifier);
-        if (result.outcome === "gone") {
-          staleIds.push(r.id);
-          // Deletion is a one-way door for this registration -- always
-          // logged individually (not just the aggregate count below) so a
-          // wrongly-deregistered card can be traced back to the exact APNs
-          // response that caused it.
-          console.log(
-            `Apple Wallet registration deregistered: serial=${r.serial_number} status=${result.status} detail=${result.detail ?? "(none)"}`
-          );
-        }
-        return result;
-      })
-    );
-    results.push(...batchResults);
+
+  try {
+    await withApnsSession(async (session) => {
+      // Sent in batches rather than one giant Promise.all: a single
+      // restaurant with a very large client base would otherwise open a
+      // burst of concurrent HTTP/2 streams equal to its whole device count
+      // in one go. The session is still reused for every stream in every
+      // batch -- this only bounds how many streams are open on it at once.
+      // 100 is a conservative concurrency figure for one HTTP/2 connection
+      // (well under typical server-side SETTINGS_MAX_CONCURRENT_STREAMS
+      // values) that still keeps small/medium restaurants (the common case
+      // today) at a single batch, so nothing gets slower for them.
+      const PUSH_BATCH_SIZE = 100;
+      for (let i = 0; i < registrations.length; i += PUSH_BATCH_SIZE) {
+        const batch = registrations.slice(i, i + PUSH_BATCH_SIZE);
+        const batchResults = await Promise.all(
+          batch.map(async (r) => {
+            const result = await sendPush(session, r.push_token, passTypeIdentifier);
+            if (result.outcome === "gone") {
+              staleIds.push(r.id);
+              // Deletion is a one-way door for this registration -- always
+              // logged individually (not just the aggregate count below) so
+              // a wrongly-deregistered card can be traced back to the exact
+              // APNs response that caused it.
+              console.log(
+                `Apple Wallet registration deregistered: serial=${r.serial_number} status=${result.status} detail=${result.detail ?? "(none)"}`
+              );
+            }
+            return result;
+          })
+        );
+        results.push(...batchResults);
+      }
+    });
+  } catch (err) {
+    // Session-level failure (couldn't connect at all) -- every registration
+    // in this event counts as an error, none are deleted (a connection
+    // failure says nothing about token validity).
+    console.error("Apple Wallet APNs session error:", err);
+    results = registrations.map(() => ({ outcome: "error" as const, status: 0, detail: String(err) }));
   }
 
   const okCount = results.filter((r) => r.outcome === "ok").length;
@@ -278,7 +263,8 @@ export async function notifyApplePassUpdate({
 }
 
 // Call after a restaurant design change (background, reward text, stamps
-// required, logo) -- pushes every client of that restaurant at once.
+// required, logo, stamp style/color/image) -- pushes every client of that
+// restaurant at once.
 export async function notifyApplePassUpdatesForRestaurant(restaurantId: string) {
   try {
     await pushToRegistrations({ column: "restaurant_prefix", value: restaurantId });
