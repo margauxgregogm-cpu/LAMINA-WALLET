@@ -320,14 +320,10 @@ export async function updateRestaurant(formData: FormData) {
     (e): e is string => e !== null
   );
 
-  // Read before writing so the Apple Wallet push below can be skipped when
-  // nothing the pass actually renders has changed -- e.g. an admin editing
-  // only `category`/`address`/the interface theme colors (none of which
-  // reach buildAppleWalletPass, see apple-wallet.ts), or just re-submitting
-  // the form unchanged. Previously this endpoint always bumped `updated_at`
-  // and always pushed every registered device of the restaurant on every
-  // save, which is a real source of the kind of repeated no-op updates that
-  // trigger Apple's "some passes are receiving too many updates" warning.
+  // Read before writing. walletFieldsChanged below is now diagnostic-only
+  // (logged, not a gate) -- see the updated_at write further down for why:
+  // a suspected miss in this comparison was silently preventing already-
+  // installed passes from ever re-fetching on legitimate visual changes.
   const { data: before } = await supabaseAdmin
     .from("restaurants")
     .select("name, background_color, wallet_text_color, background_image_url, stamps_required, reward_text, logo_url")
@@ -371,14 +367,19 @@ export async function updateRestaurant(formData: FormData) {
   } else if (removeBackgroundImage) {
     update.background_image_url = null;
   }
-  if (walletFieldsChanged) {
-    // Lets the Apple Wallet push-update endpoint tell which already-saved
-    // passes need refreshing (see apple-wallet-push.ts). Only bumped when a
-    // field the pass actually renders changed, so it stays a reliable
-    // "does this pass need refreshing" signal for passesUpdatedSince /
-    // If-Modified-Since instead of moving on every save.
-    update.updated_at = new Date().toISOString();
-  }
+  // Always bumped, unconditionally, on every save from this form -- the
+  // walletFieldsChanged comparison above is diagnostic-only now (logged
+  // below), not a gate. It used to gate this write, on the assumption a
+  // before/after comparison would reliably catch every real visual change;
+  // if that comparison ever misses one (still being confirmed), the pass
+  // silently never re-fetches, and only an unrelated action that happens to
+  // bump updated_at unconditionally (e.g. sending a push notification, see
+  // notifications/actions.ts) "unblocks" it. Matches the notification path,
+  // which has always bumped updated_at unconditionally with no issue.
+  update.updated_at = new Date().toISOString();
+  console.log(
+    `updateRestaurant: walletFieldsChanged=${walletFieldsChanged} restaurant=${id} (diagnostic only -- updated_at/push no longer gated on this)`
+  );
 
   const { data: updated, error } = await supabaseAdmin
     .from("restaurants")
@@ -392,9 +393,9 @@ export async function updateRestaurant(formData: FormData) {
   }
 
   // Best-effort, non-blocking: pushes the design change to any Google/Apple
-  // Wallet passes clients already saved for this restaurant. Google Wallet
-  // is synced unconditionally as before (out of scope for the Apple-side
-  // over-notification fix); the Apple push is gated on walletFieldsChanged.
+  // Wallet passes clients already saved for this restaurant. Both are now
+  // unconditional on every save from this form, matching the notification
+  // path (notifications/actions.ts), which has always worked this way.
   if (updated) {
     after(() =>
       updateGoogleWalletClassDesign({
@@ -405,9 +406,7 @@ export async function updateRestaurant(formData: FormData) {
         logoUrl: updated.logo_url,
       })
     );
-    if (walletFieldsChanged) {
-      after(() => notifyApplePassUpdatesForRestaurant(id));
-    }
+    after(() => notifyApplePassUpdatesForRestaurant(id));
     // Reward text lives per-client on Google's side (see the function doc),
     // so it needs its own pass over every client instead of the one PATCH
     // updateGoogleWalletClassDesign sends for the shared class.
@@ -598,21 +597,24 @@ export async function updateRestaurantStampStyle(formData: FormData) {
     update.stamp_image_url = null;
   }
 
-  // Only re-pushes Apple Wallet passes (and bumps updated_at, which is what
-  // the passes web-service route's Last-Modified check relies on) when
-  // something the strip image actually renders changed -- same
-  // over-notification guard as updateRestaurant's walletFieldsChanged.
-  // Google Wallet has no per-stamp color/image field to sync (see
-  // src/lib/google-wallet.ts) so no Google call is needed here at all.
+  // `changed` is diagnostic-only now (logged, not a gate) -- see
+  // updateRestaurant's matching comment for why: a suspected miss in this
+  // exact style of before/after comparison was silently preventing
+  // already-installed passes from ever re-fetching a real style change.
+  // updated_at and the push below are now always applied on every save from
+  // this form, matching the notification path's always-unconditional
+  // behavior. Google Wallet still has no per-stamp color/image field to
+  // sync (see src/lib/google-wallet.ts) so no Google call is needed here.
   const changed =
     !before ||
     before.stamp_display_style !== style ||
     before.stamp_color !== stampColor ||
     before.stamp_image_url !== nextStampImageUrl;
+  console.log(
+    `updateRestaurantStampStyle: changed=${changed} restaurant=${id} (diagnostic only -- updated_at/push no longer gated on this)`
+  );
 
-  if (changed) {
-    update.updated_at = new Date().toISOString();
-  }
+  update.updated_at = new Date().toISOString();
 
   const { error } = await supabaseAdmin.from("restaurants").update(update).eq("id", id);
 
@@ -620,9 +622,7 @@ export async function updateRestaurantStampStyle(formData: FormData) {
     return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent(error.message)}`);
   }
 
-  if (changed) {
-    after(() => notifyApplePassUpdatesForRestaurant(id));
-  }
+  after(() => notifyApplePassUpdatesForRestaurant(id));
 
   redirect(`/admin/restaurants/${id}?stampStyleSaved=1`);
 }
