@@ -73,10 +73,18 @@ export function buildGoogleWalletSaveUrl({
     state: "ACTIVE",
     accountName: clientName,
     accountId: clientId,
-    loyaltyPoints: {
-      label: "Tampons",
-      balance: { string: `${stamps} / ${stampsRequired}` },
-    },
+    // A restaurant configured with stampsRequired = 0 has no stamp program
+    // for this card -- omitted entirely rather than showing a meaningless
+    // "0 / 0" (see migration 021_stamp_display_style.sql). The reward text
+    // below is unrelated to the stamp count and always shown.
+    ...(stampsRequired > 0
+      ? {
+          loyaltyPoints: {
+            label: "Tampons",
+            balance: { string: `${stamps} / ${stampsRequired}` },
+          },
+        }
+      : {}),
     // Shown directly on the card face next to the stamp count — the
     // textModulesData entry below only shows in the expanded details panel,
     // which clients don't see without tapping into the pass.
@@ -173,10 +181,14 @@ export async function updateGoogleWalletStamps({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          loyaltyPoints: {
-            label: "Tampons",
-            balance: { string: `${stamps} / ${stampsRequired}` },
-          },
+          ...(stampsRequired > 0
+            ? {
+                loyaltyPoints: {
+                  label: "Tampons",
+                  balance: { string: `${stamps} / ${stampsRequired}` },
+                },
+              }
+            : {}),
           // Also re-sent here (not just at creation) so passes saved before
           // this field existed pick it up on their next visit, without a
           // separate backfill.

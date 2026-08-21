@@ -15,7 +15,7 @@ export default async function SignupPage({
   const { data: restaurant } = await supabase
     .from("restaurants")
     .select(
-      "id, slug, name, background_color, background_image_url, wallet_text_color, stamps_required, reward_text, welcome_offer_text, logo_url, collect_first_name, collect_last_name, collect_phone, collect_email, collect_city, collect_civilite, collect_date_naissance, collect_adresse_postale, collect_profession, collect_nationalite, collect_code_parrainage"
+      "id, slug, name, background_color, background_image_url, wallet_text_color, stamps_required, reward_text, welcome_offer_text, logo_url, stamp_display_style, stamp_color, stamp_image_url, collect_first_name, collect_last_name, collect_phone, collect_email, collect_city, collect_civilite, collect_date_naissance, collect_adresse_postale, collect_profession, collect_nationalite, collect_code_parrainage"
     )
     .eq("slug", slug)
     .single();
@@ -54,6 +54,9 @@ export default async function SignupPage({
         backgroundColor={restaurant.background_color}
         backgroundImageUrl={restaurant.background_image_url}
         textColor={restaurant.wallet_text_color}
+        stampDisplayStyle={restaurant.stamp_display_style}
+        stampColor={restaurant.stamp_color}
+        stampImageUrl={restaurant.stamp_image_url}
       />
 
       {restaurant.welcome_offer_text && (

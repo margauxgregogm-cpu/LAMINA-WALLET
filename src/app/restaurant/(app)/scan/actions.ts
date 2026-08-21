@@ -53,14 +53,20 @@ export async function recordVisit(clientId: string) {
     };
   }
 
-  const newStampCount = client.stamps + 1;
-  const rewardEarned = newStampCount >= restaurant.stamps_required;
-  const stampsAfter = rewardEarned ? 0 : newStampCount;
+  // A restaurant configured with stampsRequired = 0 has no stamp program at
+  // all -- the visit (and the "1 passage/jour" gate above, and the history
+  // below) still record normally, but there's no threshold to increment
+  // towards or reward to trigger, so `clients.stamps` is left untouched
+  // rather than incremented against a zero ceiling.
+  const hasStampProgram = restaurant.stamps_required > 0;
+  const newStampCount = hasStampProgram ? client.stamps + 1 : client.stamps;
+  const rewardEarned = hasStampProgram && newStampCount >= restaurant.stamps_required;
+  const stampsAfter = hasStampProgram ? (rewardEarned ? 0 : newStampCount) : client.stamps;
 
   const { error: updateError } = await supabaseAdmin
     .from("clients")
     .update({
-      stamps: stampsAfter,
+      ...(hasStampProgram ? { stamps: stampsAfter } : {}),
       total_visits: client.total_visits + 1,
       last_visit_at: new Date().toISOString(),
     })

@@ -79,6 +79,9 @@ export default async function ClientDetailPage({
             backgroundColor={restaurant.background_color}
             backgroundImageUrl={restaurant.background_image_url}
             textColor={restaurant.wallet_text_color}
+            stampDisplayStyle={restaurant.stamp_display_style}
+            stampColor={restaurant.stamp_color}
+            stampImageUrl={restaurant.stamp_image_url}
           />
 
           <AddStampButton

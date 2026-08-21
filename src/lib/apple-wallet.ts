@@ -90,6 +90,9 @@ export async function buildAppleWalletPass({
   logoUrl,
   announcementMessage,
   walletTextColor,
+  stampDisplayStyle,
+  stampColor,
+  stampImageUrl,
 }: {
   restaurantId: string;
   restaurantName: string;
@@ -113,6 +116,11 @@ export async function buildAppleWalletPass({
    * re-saved since this field was added keep Apple's own default (black)
    * exactly as before. */
   walletTextColor?: string | null;
+  /** See migration 021_stamp_display_style.sql. Defaults to "color" in
+   * renderStripImages when omitted, so existing restaurants are unaffected. */
+  stampDisplayStyle?: "color" | "image" | "counter" | null;
+  stampColor?: string | null;
+  stampImageUrl?: string | null;
 }): Promise<Buffer> {
   if (!isAppleWalletConfigured()) {
     throw new Error("Apple Wallet is not configured");
@@ -131,6 +139,9 @@ export async function buildAppleWalletPass({
       backgroundImageUrl,
       stampsEarned: stamps,
       stampsRequired,
+      displayStyle: stampDisplayStyle ?? "color",
+      stampColor,
+      stampImageUrl,
     }),
   ]);
 
@@ -206,12 +217,19 @@ export async function buildAppleWalletPass({
   // sending a push notification. Fires on every attribution method (scan,
   // recherche, fiche client, gestion libre add/retrait) since they all set
   // this same field.
-  pass.headerFields.push({
-    key: "stamps",
-    label: "TAMPONS",
-    value: `${stamps} / ${stampsRequired}`,
-    changeMessage: "Solde de vos points : %@",
-  });
+  // A restaurant configured with stampsRequired = 0 has no stamp program at
+  // all for this card -- omitting the field entirely avoids ever showing a
+  // meaningless "0 / 0", while every other field (reward, member, QR code)
+  // still renders normally. PassKit doesn't require headerFields to be
+  // present on a storeCard.
+  if (stampsRequired > 0) {
+    pass.headerFields.push({
+      key: "stamps",
+      label: "TAMPONS",
+      value: `${stamps} / ${stampsRequired}`,
+      changeMessage: "Solde de vos points : %@",
+    });
+  }
   // Deliberately no primaryFields: on storeCard that slot renders right on
   // top of the strip image, which is exactly where the member name isn't
   // wanted. Keeping it in secondary/auxiliary puts it in the plain text
@@ -253,7 +271,7 @@ export async function buildAppleWalletPassForClient(clientId: string): Promise<
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
     .select(
-      "name, background_color, background_image_url, stamps_required, reward_text, logo_url, wallet_announcement, wallet_text_color"
+      "name, background_color, background_image_url, stamps_required, reward_text, logo_url, wallet_announcement, wallet_text_color, stamp_display_style, stamp_color, stamp_image_url"
     )
     .eq("id", client.restaurant_id)
     .single();
@@ -275,6 +293,9 @@ export async function buildAppleWalletPassForClient(clientId: string): Promise<
     logoUrl: restaurant.logo_url,
     announcementMessage: restaurant.wallet_announcement,
     walletTextColor: restaurant.wallet_text_color,
+    stampDisplayStyle: restaurant.stamp_display_style,
+    stampColor: restaurant.stamp_color,
+    stampImageUrl: restaurant.stamp_image_url,
   });
 
   return { pass, restaurantName: restaurant.name };

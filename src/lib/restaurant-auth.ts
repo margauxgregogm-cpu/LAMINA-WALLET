@@ -22,6 +22,9 @@ export type AuthenticatedRestaurant = {
   background_color: string;
   background_image_url: string | null;
   wallet_text_color: string | null;
+  stamp_display_style: "color" | "image" | "counter";
+  stamp_color: string | null;
+  stamp_image_url: string | null;
   interface_theme_color: string;
   interface_text_color: string;
   interface_card_color: string;
@@ -67,7 +70,7 @@ export const getAuthenticatedRestaurant = cache(async function getAuthenticatedR
   const { data: restaurant } = await supabaseAdmin
     .from("restaurants")
     .select(
-      "id, slug, name, stamps_required, reward_text, logo_url, background_color, background_image_url, wallet_text_color, interface_theme_color, interface_text_color, interface_card_color, collect_first_name, collect_last_name, collect_phone, collect_email, collect_city, collect_civilite, collect_date_naissance, collect_adresse_postale, collect_profession, collect_nationalite, collect_code_parrainage, free_stamp_management"
+      "id, slug, name, stamps_required, reward_text, logo_url, background_color, background_image_url, wallet_text_color, stamp_display_style, stamp_color, stamp_image_url, interface_theme_color, interface_text_color, interface_card_color, collect_first_name, collect_last_name, collect_phone, collect_email, collect_city, collect_civilite, collect_date_naissance, collect_adresse_postale, collect_profession, collect_nationalite, collect_code_parrainage, free_stamp_management"
     )
     .eq("user_id", authedUser.id)
     .single();
@@ -76,6 +79,9 @@ export const getAuthenticatedRestaurant = cache(async function getAuthenticatedR
 
   return {
     ...restaurant,
+    // Column is not-null with a DB default (see migration
+    // 021_stamp_display_style.sql), this only guards a null slipping through.
+    stamp_display_style: restaurant.stamp_display_style ?? "color",
     interface_theme_color: restaurant.interface_theme_color ?? DEFAULT_INTERFACE_THEME_COLOR,
     interface_text_color: restaurant.interface_text_color ?? DEFAULT_INTERFACE_TEXT_COLOR,
     interface_card_color: restaurant.interface_card_color ?? DEFAULT_INTERFACE_CARD_COLOR,

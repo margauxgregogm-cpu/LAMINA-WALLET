@@ -30,6 +30,14 @@ function parseQuantity(raw: number): { ok: true; value: number } | Failure {
 // unlike the fixed +1 scan/recherche flow which can only ever cross the
 // threshold by at most one stamp and simply resets to 0.
 function applyCycles(current: number, delta: number, stampsRequired: number) {
+  // stampsRequired = 0 has no cycle threshold to divide/modulo against --
+  // guarded defensively even though the admin UI won't normally combine
+  // "gestion libre" with a 0-stamp program (see migration
+  // 021_stamp_display_style.sql / scan/actions.ts for the primary 0-stamp
+  // handling on the regular scan path).
+  if (stampsRequired <= 0) {
+    return { stampsAfter: current + delta, cyclesEarned: 0 };
+  }
   const newTotal = current + delta;
   const cyclesEarned = Math.floor(newTotal / stampsRequired);
   const stampsAfter = newTotal % stampsRequired;

@@ -110,6 +110,80 @@ async function uploadImageIfProvided(
   return { url: data.publicUrl, error: null };
 }
 
+// Small, fixed target size: the stamp image only ever needs to fill a small
+// circle (max ~152px on the Apple Wallet strip, 40px on the web card) --
+// even generous retina headroom doesn't justify storing anything bigger.
+const STAMP_IMAGE_MAX_DIMENSION = 240;
+// Guards against decoding an absurdly large file before we even know it's a
+// real image -- independent of the resize step below, which only bounds the
+// *output* size.
+const STAMP_IMAGE_MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+const ALLOWED_STAMP_IMAGE_FORMATS = new Set(["png", "jpeg", "webp"]);
+
+// Stricter than uploadImageIfProvided (logo/background) on purpose: no
+// "upload the raw file anyway" fallback if sharp can't decode it. A tampon
+// image is small and purely decorative -- refusing a bad upload outright
+// (and leaving whatever image was already configured in place) is safer
+// than risking a corrupted/mistyped file ever reaching Apple Wallet pass
+// generation.
+async function uploadStampImageIfProvided(
+  formData: FormData,
+  pathPrefix: string
+): Promise<{ url: string | null; error: string | null }> {
+  const file = formData.get("stampImage");
+  if (!(file instanceof File) || file.size === 0) return { url: null, error: null };
+
+  if (file.size > STAMP_IMAGE_MAX_UPLOAD_BYTES) {
+    return { url: null, error: "L'image de tampon dépasse la taille maximale autorisée (8 Mo)." };
+  }
+
+  const original = Buffer.from(await file.arrayBuffer());
+
+  let metadata;
+  try {
+    metadata = await sharp(original).metadata();
+  } catch {
+    return { url: null, error: "Le fichier envoyé n'est pas une image valide." };
+  }
+
+  // Checks the real decoded format (not the filename extension or the
+  // browser-supplied MIME type, both trivially spoofable) and rejects
+  // anything else outright -- this is what stands between this upload field
+  // and someone renaming an arbitrary file to ".png".
+  if (!metadata.format || !ALLOWED_STAMP_IMAGE_FORMATS.has(metadata.format) || !metadata.width || !metadata.height) {
+    return { url: null, error: "Format d'image non supporté (PNG, JPEG ou WebP uniquement)." };
+  }
+
+  // Resized onto a transparent square canvas with "contain" (never crops or
+  // stretches the source) so a square, rectangular, or already-transparent
+  // PNG all land on the same shape -- the circular mask is applied later at
+  // render time (see LoyaltyCard.tsx and apple-wallet-strip.tsx), not here,
+  // so this asset stays reusable if that render logic ever changes. Always
+  // re-encoded as PNG regardless of the source format, per the "format
+  // principal PNG" requirement, and to guarantee transparency support.
+  const processed = await sharp(original)
+    .resize({
+      width: STAMP_IMAGE_MAX_DIMENSION,
+      height: STAMP_IMAGE_MAX_DIMENSION,
+      fit: "contain",
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+      withoutEnlargement: true,
+    })
+    .png({ compressionLevel: 9 })
+    .toBuffer();
+
+  const path = `${pathPrefix}-${Date.now()}.png`;
+
+  const { error } = await supabaseAdmin.storage
+    .from("restaurant-logos")
+    .upload(path, processed, { contentType: "image/png", upsert: true });
+
+  if (error) return { url: null, error: error.message };
+
+  const { data } = supabaseAdmin.storage.from("restaurant-logos").getPublicUrl(path);
+  return { url: data.publicUrl, error: null };
+}
+
 export async function createRestaurant(formData: FormData) {
   await requireAdmin();
 
@@ -469,6 +543,88 @@ export async function updateRestaurantFreeStampManagement(formData: FormData) {
   }
 
   redirect(`/admin/restaurants/${id}?freeStampManagementSaved=1`);
+}
+
+// Stamp display style (color / image / counter-only) -- see migration
+// 021_stamp_display_style.sql. Its own form/action, like
+// updateRestaurantFreeStampManagement above, so it can't interfere with the
+// main edit form's image uploads and wallet sync.
+export async function updateRestaurantStampStyle(formData: FormData) {
+  await requireAdmin();
+
+  const id = String(formData.get("id") ?? "");
+  const slug = String(formData.get("slug") ?? "restaurant");
+  const style = String(formData.get("stampDisplayStyle") ?? "color");
+  const removeStampImage = formData.get("removeStampImage") === "on";
+
+  if (!["color", "image", "counter"].includes(style)) {
+    return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent("Style de tampon invalide.")}`);
+  }
+
+  // Always captured and saved regardless of the currently selected style --
+  // switching color -> image -> counter -> color must never lose a
+  // previously chosen color (or image, handled below), see requirement on
+  // style changes never dropping data.
+  const stampColor = String(formData.get("stampColor") ?? "#10b981");
+
+  let uploadedImageUrl: string | null = null;
+  if (style === "image") {
+    const upload = await uploadStampImageIfProvided(formData, `${slug}-stamp`);
+    if (upload.error) {
+      return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent(upload.error)}`);
+    }
+    uploadedImageUrl = upload.url;
+  }
+
+  const { data: before } = await supabaseAdmin
+    .from("restaurants")
+    .select("stamp_display_style, stamp_color, stamp_image_url")
+    .eq("id", id)
+    .single();
+
+  const nextStampImageUrl = uploadedImageUrl
+    ? uploadedImageUrl
+    : removeStampImage
+      ? null
+      : (before?.stamp_image_url ?? null);
+
+  const update: Record<string, unknown> = {
+    stamp_display_style: style,
+    stamp_color: stampColor,
+  };
+  if (uploadedImageUrl) {
+    update.stamp_image_url = uploadedImageUrl;
+  } else if (removeStampImage) {
+    update.stamp_image_url = null;
+  }
+
+  // Only re-pushes Apple Wallet passes (and bumps updated_at, which is what
+  // the passes web-service route's Last-Modified check relies on) when
+  // something the strip image actually renders changed -- same
+  // over-notification guard as updateRestaurant's walletFieldsChanged.
+  // Google Wallet has no per-stamp color/image field to sync (see
+  // src/lib/google-wallet.ts) so no Google call is needed here at all.
+  const changed =
+    !before ||
+    before.stamp_display_style !== style ||
+    before.stamp_color !== stampColor ||
+    before.stamp_image_url !== nextStampImageUrl;
+
+  if (changed) {
+    update.updated_at = new Date().toISOString();
+  }
+
+  const { error } = await supabaseAdmin.from("restaurants").update(update).eq("id", id);
+
+  if (error) {
+    return redirect(`/admin/restaurants/${id}?error=${encodeURIComponent(error.message)}`);
+  }
+
+  if (changed) {
+    after(() => notifyApplePassUpdatesForRestaurant(id));
+  }
+
+  redirect(`/admin/restaurants/${id}?stampStyleSaved=1`);
 }
 
 // Free-text internal note for the admin's own tracking. Never surfaced to

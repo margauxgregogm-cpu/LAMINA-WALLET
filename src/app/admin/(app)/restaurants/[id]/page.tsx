@@ -5,6 +5,7 @@ import { isAdmin } from "@/lib/admin-auth";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { FormField } from "@/components/FormField";
 import { ColorSwatchPicker } from "@/components/ColorSwatchPicker";
+import { StampStyleFields } from "@/components/admin/StampStyleFields";
 import { SubmitButton } from "@/components/SubmitButton";
 import { adminInputClass, adminButtonClass, adminSecondaryButtonClass } from "@/components/admin/adminFormClasses";
 import { BUSINESS_CATEGORIES } from "@/lib/business-categories";
@@ -15,6 +16,7 @@ import {
   updateRestaurantIdentifier,
   updateRestaurantCollectFields,
   updateRestaurantFreeStampManagement,
+  updateRestaurantStampStyle,
   updateRestaurantNote,
 } from "../actions";
 import { DeleteRestaurantButton } from "../DeleteRestaurantButton";
@@ -36,6 +38,7 @@ export default async function EditRestaurantPage({
     identifierUpdated?: string;
     collectFieldsSaved?: string;
     freeStampManagementSaved?: string;
+    stampStyleSaved?: string;
     noteSaved?: string;
   }>;
 }) {
@@ -50,6 +53,7 @@ export default async function EditRestaurantPage({
     identifierUpdated,
     collectFieldsSaved,
     freeStampManagementSaved,
+    stampStyleSaved,
     noteSaved,
   } = await searchParams;
   const pushStatus = await getPushQuotaStatus(id);
@@ -109,6 +113,11 @@ export default async function EditRestaurantPage({
             Gestion libre des tampons mise à jour.
           </p>
         )}
+        {stampStyleSaved && (
+          <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
+            Style des tampons mis à jour.
+          </p>
+        )}
         {noteSaved && (
           <p className="mb-4 rounded-lg bg-emerald-950 px-3 py-2 text-sm text-emerald-300">
             Note enregistrée.
@@ -149,11 +158,15 @@ export default async function EditRestaurantPage({
                 />
               </FormField>
 
-              <FormField label="Nombre de passages pour la récompense">
+              <FormField
+                label="Nombre de passages pour la récompense"
+                hint="0 = carte sans programme de tampons (aucun rond, aucun compteur affiché)"
+              >
                 <input
                   name="stampsRequired"
                   type="number"
-                  min={1}
+                  min={0}
+                  step={1}
                   defaultValue={restaurant.stamps_required}
                   required
                   className={adminInputClass}
@@ -517,6 +530,34 @@ export default async function EditRestaurantPage({
             </label>
             <SubmitButton pendingChildren="Enregistrement..." className={adminSecondaryButtonClass}>
               Enregistrer
+            </SubmitButton>
+          </form>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900 p-6">
+          <h2 className="mb-1 text-lg font-bold tracking-tight text-zinc-100">Style des tampons</h2>
+          <p className="mb-5 text-sm text-zinc-400">
+            Choisissez comment les tampons obtenus sont affichés sur la carte (Apple Wallet et aperçu
+            web). Le compteur de progression (ex. 3/10) reste toujours affiché, sauf si le nombre de
+            passages pour la récompense est fixé à 0. Changer de style ne modifie jamais les tampons
+            déjà attribués aux clients.
+          </p>
+          <form
+            action={updateRestaurantStampStyle}
+            encType="multipart/form-data"
+            className="space-y-4"
+          >
+            <input type="hidden" name="id" value={restaurant.id} />
+            <input type="hidden" name="slug" value={restaurant.slug} />
+
+            <StampStyleFields
+              defaultStyle={(restaurant.stamp_display_style as "color" | "image" | "counter") ?? "color"}
+              defaultColor={restaurant.stamp_color ?? "#10b981"}
+              currentImageUrl={restaurant.stamp_image_url}
+            />
+
+            <SubmitButton pendingChildren="Enregistrement..." className={adminSecondaryButtonClass}>
+              Enregistrer le style des tampons
             </SubmitButton>
           </form>
         </div>

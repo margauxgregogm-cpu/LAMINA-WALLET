@@ -46,6 +46,9 @@ export function ScanClient({
   backgroundColor,
   backgroundImageUrl,
   walletTextColor,
+  stampDisplayStyle,
+  stampColor,
+  stampImageUrl,
   freeStampManagement,
 }: {
   restaurantName: string;
@@ -53,6 +56,9 @@ export function ScanClient({
   backgroundColor: string;
   backgroundImageUrl: string | null;
   walletTextColor: string | null;
+  stampDisplayStyle: "color" | "image" | "counter";
+  stampColor: string | null;
+  stampImageUrl: string | null;
   freeStampManagement: boolean;
 }) {
   const [query, setQuery] = useState("");
@@ -406,6 +412,9 @@ export function ScanClient({
               backgroundColor={backgroundColor}
               backgroundImageUrl={backgroundImageUrl}
               textColor={walletTextColor}
+              stampDisplayStyle={stampDisplayStyle}
+              stampColor={stampColor}
+              stampImageUrl={stampImageUrl}
             />
 
             <p className="text-sm text-white/80">Cliquez n&apos;importe où pour continuer</p>
@@ -458,6 +467,9 @@ export function ScanClient({
               backgroundColor={backgroundColor}
               backgroundImageUrl={backgroundImageUrl}
               textColor={walletTextColor}
+              stampDisplayStyle={stampDisplayStyle}
+              stampColor={stampColor}
+              stampImageUrl={stampImageUrl}
             />
 
             <div className="flex w-full flex-col gap-2 rounded-2xl bg-white p-4 dark:bg-zinc-900">
