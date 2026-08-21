@@ -69,6 +69,12 @@ function getApnsSession(): http2.ClientHttp2Session {
     cachedSessionLastUsedAt = Date.now();
     return cachedSession;
   }
+  // Diagnostic only: distinguishes "reused a warm session" from "opened a
+  // fresh one" per push, to check whether a stale-but-not-yet-detected
+  // socket (see comment above) is behind any future intermittent failures.
+  console.log(
+    `Apple Wallet APNs session: opening new (reason=${!cachedSession ? "none cached" : cachedSession.closed || cachedSession.destroyed ? "previous closed/destroyed" : "idle too long"})`
+  );
   if (cachedSession && idleTooLong) {
     cachedSession.close();
   }
@@ -151,9 +157,28 @@ function sendPush(pushToken: string, passTypeIdentifier: string): Promise<PushRe
       body += chunk;
     });
     req.on("end", () => {
-      if (status === 200) finish({ outcome: "ok", status });
-      else if (status === 410 || status === 400) finish({ outcome: "gone", status, detail: body });
-      else finish({ outcome: "error", status, detail: body });
+      if (status === 200) {
+        finish({ outcome: "ok", status });
+        return;
+      }
+      // Apple's APNs error body is {"reason": "..."}. 410 always means the
+      // token is truly dead ("Unregistered") -- safe to delete. 400 covers
+      // many unrelated reasons too (BadTopic, BadExpirationDate, IdleTimeout,
+      // PayloadEmpty, DuplicateHeaders...), most of which are transient or
+      // request-shape issues that say nothing about the token's validity.
+      // Treating every 400 as "gone" (as this used to) permanently deleted
+      // valid, working registrations the first time APNs rejected a push for
+      // any unrelated reason -- a card that "used to update and silently
+      // stopped" is exactly what that produces. Only "BadDeviceToken" (the
+      // 400-status equivalent of a dead token) is now treated as gone.
+      let reason: string | undefined;
+      try {
+        reason = (JSON.parse(body) as { reason?: string }).reason;
+      } catch {
+        reason = undefined;
+      }
+      const isGone = status === 410 || (status === 400 && reason === "BadDeviceToken");
+      finish({ outcome: isGone ? "gone" : "error", status, detail: body });
     });
     req.on("error", (err) => {
       finish({ outcome: "error", status: 0, detail: String(err) });
@@ -172,7 +197,7 @@ async function pushToRegistrations(serialNumberFilter: { column: "serial_number"
   const passTypeIdentifier = process.env.APPLE_WALLET_PASS_TYPE_IDENTIFIER!;
   let query = supabaseAdmin
     .from("apple_wallet_registrations")
-    .select("id, push_token")
+    .select("id, push_token, serial_number")
     .eq("pass_type_identifier", passTypeIdentifier);
 
   query =
@@ -206,7 +231,16 @@ async function pushToRegistrations(serialNumberFilter: { column: "serial_number"
     const batchResults = await Promise.all(
       batch.map(async (r) => {
         const result = await sendPush(r.push_token, passTypeIdentifier);
-        if (result.outcome === "gone") staleIds.push(r.id);
+        if (result.outcome === "gone") {
+          staleIds.push(r.id);
+          // Deletion is a one-way door for this registration -- always
+          // logged individually (not just the aggregate count below) so a
+          // wrongly-deregistered card can be traced back to the exact APNs
+          // response that caused it.
+          console.log(
+            `Apple Wallet registration deregistered: serial=${r.serial_number} status=${result.status} detail=${result.detail ?? "(none)"}`
+          );
+        }
         return result;
       })
     );
