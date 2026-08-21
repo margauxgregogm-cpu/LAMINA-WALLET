@@ -311,6 +311,34 @@ export default async function EditRestaurantPage({
         </form>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900 p-6">
+          <h2 className="mb-1 text-lg font-bold tracking-tight text-zinc-100">Style des tampons</h2>
+          <p className="mb-5 text-sm text-zinc-400">
+            Choisissez comment les tampons obtenus sont affichés sur la carte (Apple Wallet et aperçu
+            web). Le compteur de progression (ex. 3/10) reste toujours affiché, sauf si le nombre de
+            passages pour la récompense est fixé à 0. Changer de style ne modifie jamais les tampons
+            déjà attribués aux clients.
+          </p>
+          <form
+            action={updateRestaurantStampStyle}
+            encType="multipart/form-data"
+            className="space-y-4"
+          >
+            <input type="hidden" name="id" value={restaurant.id} />
+            <input type="hidden" name="slug" value={restaurant.slug} />
+
+            <StampStyleFields
+              defaultStyle={(restaurant.stamp_display_style as "color" | "image" | "counter") ?? "color"}
+              defaultColor={restaurant.stamp_color ?? "#10b981"}
+              currentImageUrl={restaurant.stamp_image_url}
+            />
+
+            <SubmitButton pendingChildren="Enregistrement..." className={adminSecondaryButtonClass}>
+              Enregistrer le style des tampons
+            </SubmitButton>
+          </form>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900 p-6">
           <h2 className="mb-1 text-lg font-bold tracking-tight text-zinc-100">Options</h2>
           <p className="mb-5 text-sm text-zinc-400">
             Fonctionnalités supplémentaires activables pour cette entreprise.
@@ -530,34 +558,6 @@ export default async function EditRestaurantPage({
             </label>
             <SubmitButton pendingChildren="Enregistrement..." className={adminSecondaryButtonClass}>
               Enregistrer
-            </SubmitButton>
-          </form>
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-white/10 bg-zinc-900 p-6">
-          <h2 className="mb-1 text-lg font-bold tracking-tight text-zinc-100">Style des tampons</h2>
-          <p className="mb-5 text-sm text-zinc-400">
-            Choisissez comment les tampons obtenus sont affichés sur la carte (Apple Wallet et aperçu
-            web). Le compteur de progression (ex. 3/10) reste toujours affiché, sauf si le nombre de
-            passages pour la récompense est fixé à 0. Changer de style ne modifie jamais les tampons
-            déjà attribués aux clients.
-          </p>
-          <form
-            action={updateRestaurantStampStyle}
-            encType="multipart/form-data"
-            className="space-y-4"
-          >
-            <input type="hidden" name="id" value={restaurant.id} />
-            <input type="hidden" name="slug" value={restaurant.slug} />
-
-            <StampStyleFields
-              defaultStyle={(restaurant.stamp_display_style as "color" | "image" | "counter") ?? "color"}
-              defaultColor={restaurant.stamp_color ?? "#10b981"}
-              currentImageUrl={restaurant.stamp_image_url}
-            />
-
-            <SubmitButton pendingChildren="Enregistrement..." className={adminSecondaryButtonClass}>
-              Enregistrer le style des tampons
             </SubmitButton>
           </form>
         </div>
